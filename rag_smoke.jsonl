@@ -1,0 +1,5 @@
+{"question": "هل يجوز إنهاء عقد العمل بدون إشعار؟", "expected_topic": "إنهاء عقد العمل غير محدد المدة والإشعار", "expected_reference_contains": "المادة 23"}
+{"question": "ما المقصود بالفصل التعسفي؟", "expected_topic": "الفصل التعسفي", "expected_reference_contains": "المادة 25"}
+{"question": "ما حقوق العامل في الإجازة السنوية؟", "expected_topic": "الإجازة السنوية المدفوعة", "expected_reference_contains": "صفحة 42"}
+{"question": "هل يجوز الخصم من أجر العامل؟", "expected_topic": "الأجر", "expected_reference_contains": "صفحة 64"}
+{"question": "ما هي فترة التجربة في عقد العمل؟", "expected_topic": "فترة التجربة", "expected_reference_contains": "المادة 35"}

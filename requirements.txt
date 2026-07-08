@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+httpx
+python-dotenv
+weaviate-client>=3.25,<4
+sentence-transformers>=2.2,<3
+numpy
+prometheus-client
+pytest

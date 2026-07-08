@@ -1,0 +1,30 @@
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    ports:
+      - "8001:8000"
+    environment:
+      WEAVIATE_URL: ${WEAVIATE_URL:-http://weaviate:8080}
+      WEAVIATE_CLASS: ${WEAVIATE_CLASS:-LegalChunk}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-intfloat/multilingual-e5-small}
+      TOP_K: ${TOP_K:-5}
+      RAG_PROMPT_TOP_N: ${RAG_PROMPT_TOP_N:-3}
+      CHUNK_TEXT_LIMIT: ${CHUNK_TEXT_LIMIT:-900}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b}
+      OLLAMA_TIMEOUT_SECONDS: ${OLLAMA_TIMEOUT_SECONDS:-120}
+      API_URL: ${API_URL:-http://api:8000}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001}
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:3001}
+    depends_on:
+      weaviate:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
