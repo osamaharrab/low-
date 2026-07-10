@@ -35,9 +35,9 @@ def make_settings(**overrides):
 
 
 def test_clean_llm_output_removes_think_blocks():
-    cleaned = clean_llm_output("<think>hidden reasoning</think>\nإجابة مختصرة")
+    cleaned = clean_llm_output("<think>hidden reasoning</think>\nإجابة مختصرة\n\n\nتنبيه قانونيمختصر")
 
-    assert cleaned == "إجابة مختصرة"
+    assert cleaned == "إجابة مختصرة\n\nتنبيه قانوني مختصر"
 
 
 def test_generate_answer_rejects_unsupported_provider():

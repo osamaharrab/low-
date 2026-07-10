@@ -15,6 +15,12 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const answerText = typeof result?.answer === "string" ? result.answer : "";
+  const citations = Array.isArray(result?.citations) ? result.citations : [];
+  const retrievedChunks = Array.isArray(result?.retrieved_chunks) ? result.retrieved_chunks : [];
+  const disclaimer = typeof result?.disclaimer === "string" ? result.disclaimer : "";
+  const confidence = typeof result?.confidence === "number" ? result.confidence : 0;
+
   async function askQuestion(event) {
     event.preventDefault();
     setLoading(true);
@@ -27,9 +33,17 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, k: 5 }),
       });
-      const data = await response.json();
+      let data = {};
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
       if (!response.ok) {
         throw new Error(data.detail || "تعذر الحصول على إجابة.");
+      }
+      if (!data || typeof data !== "object") {
+        throw new Error("وصلت استجابة غير مفهومة من الخدمة.");
       }
       setResult(data);
     } catch (err) {
@@ -76,45 +90,50 @@ export default function Home() {
         </div>
 
         {error && <p className="error">{error}</p>}
+        {loading && <p className="loading">جارٍ استرجاع النصوص القانونية وصياغة الإجابة...</p>}
 
         {result && (
           <section className="result">
-            <div className="answer">
+            <div className="answer panel">
               <h2>الإجابة</h2>
-              <p>{result.answer}</p>
-              <p className="confidence">الثقة: {Math.round((result.confidence || 0) * 100)}%</p>
+              <p className="answerText">{answerText || "لا توجد إجابة متاحة."}</p>
+              <p className="confidence">الثقة: {Math.round(confidence * 100)}%</p>
             </div>
 
-            <div>
-              <h2>المراجع</h2>
-              {result.citations?.length ? (
+            {citations.length ? (
+              <div className="panel">
+                <h2>المراجع</h2>
                 <ul>
-                  {result.citations.map((citation) => (
+                  {citations.map((citation) => (
                     <li key={citation.chunk_id}>
                       <strong>{citation.topic}</strong>
                       <span>{citation.reference}</span>
                     </li>
                   ))}
                 </ul>
-              ) : (
-                <p>لا توجد مراجع مسترجعة.</p>
-              )}
-            </div>
+              </div>
+            ) : (
+              <p className="mutedNotice">لا توجد مراجع مرتبطة كافية لهذا السؤال.</p>
+            )}
 
-            <div>
-              <h2>النصوص المسترجعة</h2>
-              {result.retrieved_chunks?.map((chunk) => (
-                <article key={chunk.chunk_id} className="chunk">
-                  <div>
-                    <strong>{chunk.topic}</strong>
-                    <span>{chunk.reference}</span>
-                  </div>
-                  <p>{chunk.text_preview}</p>
-                </article>
-              ))}
-            </div>
+            {retrievedChunks.length > 0 && (
+              <details className="retrieved">
+                <summary>النصوص المسترجعة</summary>
+                <div className="chunks">
+                  {retrievedChunks.map((chunk) => (
+                    <article key={chunk.chunk_id} className="chunk">
+                      <div>
+                        <strong>{chunk.topic}</strong>
+                        <span>{chunk.reference}</span>
+                      </div>
+                      <p>{chunk.text_preview}</p>
+                    </article>
+                  ))}
+                </div>
+              </details>
+            )}
 
-            <p className="disclaimer">{result.disclaimer}</p>
+            {disclaimer && <p className="disclaimer">{disclaimer}</p>}
           </section>
         )}
       </section>
@@ -161,8 +180,7 @@ export default function Home() {
           line-height: 1.8;
           color: #45515d;
         }
-        .askBox,
-        .result {
+        .askBox {
           background: #ffffff;
           border: 1px solid #dfe5e8;
           border-radius: 8px;
@@ -224,18 +242,38 @@ export default function Home() {
           border-radius: 6px;
           padding: 12px;
         }
+        .loading {
+          border: 1px solid #d6e3dd;
+          background: #f3f8f5;
+          color: #315948;
+          border-radius: 6px;
+          padding: 12px;
+          line-height: 1.7;
+        }
         .result {
           display: grid;
-          gap: 22px;
+          gap: 16px;
+        }
+        .panel {
+          border: 1px solid #e4e9eb;
+          border-radius: 8px;
+          padding: 16px;
+          background: #fbfcfc;
         }
         .answer p,
         .chunk p,
         .disclaimer {
           line-height: 1.8;
         }
+        .answerText {
+          white-space: pre-line;
+          margin: 0;
+          color: #24313c;
+        }
         .confidence {
           color: #54705f;
           font-weight: 700;
+          margin: 14px 0 0;
         }
         ul {
           margin: 0;
@@ -250,6 +288,31 @@ export default function Home() {
           border-radius: 8px;
           padding: 12px;
           background: #fbfcfc;
+        }
+        .mutedNotice {
+          margin: 0;
+          border: 1px solid #e4e9eb;
+          border-radius: 8px;
+          padding: 12px 14px;
+          background: #fbfcfc;
+          color: #586772;
+          line-height: 1.7;
+        }
+        .retrieved {
+          border: 1px solid #e4e9eb;
+          border-radius: 8px;
+          padding: 12px 14px;
+          background: #ffffff;
+        }
+        .retrieved summary {
+          cursor: pointer;
+          font-weight: 700;
+          color: #315948;
+        }
+        .chunks {
+          display: grid;
+          gap: 10px;
+          margin-top: 12px;
         }
         li span,
         .chunk span {
@@ -271,8 +334,7 @@ export default function Home() {
           h1 {
             font-size: 32px;
           }
-          .askBox,
-          .result {
+          .askBox {
             padding: 16px;
           }
         }

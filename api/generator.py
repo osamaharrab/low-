@@ -13,6 +13,7 @@ INSUFFICIENT_ANSWER = "لا تكفي قاعدة المعرفة الحالية ل
 
 THINK_BLOCK_RE = re.compile(r"<think>.*?</think>", flags=re.IGNORECASE | re.DOTALL)
 THINK_TAG_RE = re.compile(r"</?think>", flags=re.IGNORECASE)
+EXCESSIVE_BLANK_LINES_RE = re.compile(r"\n{3,}")
 
 
 class GeneratorError(RuntimeError):
@@ -22,6 +23,11 @@ class GeneratorError(RuntimeError):
 def clean_llm_output(text: str | None) -> str:
     cleaned = THINK_BLOCK_RE.sub("", text or "")
     cleaned = THINK_TAG_RE.sub("", cleaned)
+    cleaned = cleaned.replace("\r\n", "\n").replace("\r", "\n")
+    cleaned = cleaned.replace("تنبيه قانونيمختصر", "تنبيه قانوني مختصر")
+    cleaned = cleaned.replace("قانونيمختصر", "قانوني مختصر")
+    cleaned = re.sub(r"[ \t]+\n", "\n", cleaned)
+    cleaned = EXCESSIVE_BLANK_LINES_RE.sub("\n\n", cleaned)
     cleaned = cleaned.strip()
     return cleaned or INSUFFICIENT_ANSWER
 

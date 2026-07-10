@@ -21,7 +21,7 @@ SYSTEM_PROMPT = """أنت مساعد معلوماتي لمشروع Lawz AI JO.
 إذا لم تكف النصوص، قل بوضوح: لا تكفي قاعدة المعرفة الحالية للإجابة بثقة.
 لا تعرض خطوات التفكير.
 لا تكتب <think>.
-أجب مباشرة وباختصار."""
+أجب مباشرة وباختصار وبمسافات عربية واضحة."""
 
 ARABIC_VARIANTS = str.maketrans(
     {
@@ -57,6 +57,13 @@ STOPWORDS = {
     "هذا",
     "هذه",
 }
+
+INSUFFICIENT_PHRASES = (
+    "لا تكفي قاعدة المعرفة",
+    "لا توجد معلومات كافية",
+    "السياق غير كاف",
+    "لا أستطيع الإجابة بثقة",
+)
 
 
 def normalize_arabic_text(text: str) -> str:
@@ -180,6 +187,12 @@ def truncate_text(text: str, limit: int) -> str:
     return text[: max(0, limit - 1)].rstrip() + "…"
 
 
+def is_insufficient_answer(answer: str, confidence: float) -> bool:
+    if confidence <= 0.0:
+        return True
+    return any(phrase in (answer or "") for phrase in INSUFFICIENT_PHRASES)
+
+
 def build_user_prompt(question: str, chunks: list[dict[str, Any]], settings: Settings) -> str:
     context_parts = []
     for index, chunk in enumerate(chunks, start=1):
@@ -196,17 +209,30 @@ def build_user_prompt(question: str, chunks: list[dict[str, Any]], settings: Set
 {context}
 
 المطلوب:
-أجب بالعربية بصيغة منظمة:
-1. الإجابة المختصرة
-2. السبب بناءً على النصوص المسترجعة
-3. المواد أو المراجع ذات الصلة
-4. تنبيه قانوني مختصر: هذا شرح أولي وليس استشارة قانونية
+إذا كانت النصوص المسترجعة كافية، أجب بالعربية وبنفس العناوين التالية حرفياً:
+
+الإجابة المختصرة:
+اكتب خلاصة قصيرة ومباشرة.
+
+التفسير:
+اشرح السبب اعتماداً على النصوص المسترجعة فقط.
+
+المراجع:
+- اذكر المراجع الموجودة في النصوص المسترجعة فقط.
+
+تنبيه:
+هذا شرح أولي وليس استشارة قانونية.
+
+إذا كانت النصوص المسترجعة غير كافية أو غير مرتبطة بالسؤال، اكتب فقط:
+لا تكفي قاعدة المعرفة الحالية للإجابة بثقة.
 
 Rules:
 - Do not include <think>.
 - Do not show reasoning steps.
 - Do not invent article numbers.
 - Do not mention citations that are not in retrieved context.
+- Keep Arabic spacing clean and do not glue words together.
+- Do not over-explain.
 - If context is not enough, say:
   لا تكفي قاعدة المعرفة الحالية للإجابة بثقة."""
 
@@ -268,12 +294,18 @@ def answer_question(question: str, k: int, settings: Settings) -> RAGResponse:
         raise
 
     answer = clean_llm_output(answer)
-    confidence = 0.0 if INSUFFICIENT_ANSWER in answer else float(prompt_chunks[0].get("score") or 0.0)
+    confidence = 0.0 if any(phrase in answer for phrase in INSUFFICIENT_PHRASES) else float(prompt_chunks[0].get("score") or 0.0)
+    confidence = round(min(1.0, max(0.0, confidence)), 3)
+    insufficient = is_insufficient_answer(answer, confidence)
+    if insufficient:
+        confidence = 0.0
+        if not any(phrase in answer for phrase in INSUFFICIENT_PHRASES):
+            answer = INSUFFICIENT_ANSWER
 
     return RAGResponse(
         answer=answer,
-        citations=build_citations(prompt_chunks),
-        confidence=round(min(1.0, max(0.0, confidence)), 3),
+        citations=[] if insufficient else build_citations(prompt_chunks),
+        confidence=confidence,
         retrieved_chunks=build_retrieved_preview(reranked[:k]),
         disclaimer=DISCLAIMER,
     )
