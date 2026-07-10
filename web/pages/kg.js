@@ -3,23 +3,33 @@ import { useState } from "react";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 
 const sampleQuestions = [
-  "هل يجوز إنهاء عقد العمل بدون إشعار؟",
-  "ما المقصود بالفصل التعسفي؟",
-  "ما حقوق العامل في الإجازة السنوية؟",
-  "هل يجوز الخصم من أجر العامل؟",
+  "ما المواد المرتبطة بإنهاء عقد العمل؟",
+  "ما الموضوعات المرتبطة بالإجازة السنوية؟",
+  "أي قانون يحتوي على مواد الفصل التعسفي؟",
 ];
 
-export default function Home() {
+function safeObject(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function JsonBlock({ value }) {
+  return <pre dir="ltr">{JSON.stringify(value, null, 2)}</pre>;
+}
+
+export default function KGPage() {
   const [question, setQuestion] = useState(sampleQuestions[0]);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const answerText = typeof result?.answer === "string" ? result.answer : "";
-  const citations = Array.isArray(result?.citations) ? result.citations : [];
-  const retrievedChunks = Array.isArray(result?.retrieved_chunks) ? result.retrieved_chunks : [];
+  const generatedCypher = typeof result?.generated_cypher === "string" ? result.generated_cypher : "";
+  const parameters = safeObject(result?.parameters);
+  const records = Array.isArray(result?.records) ? result.records : [];
+  const nodes = Array.isArray(result?.nodes) ? result.nodes : [];
+  const relationships = Array.isArray(result?.relationships) ? result.relationships : [];
+  const rowCount = Number.isInteger(result?.row_count) ? result.row_count : records.length;
   const disclaimer = typeof result?.disclaimer === "string" ? result.disclaimer : "";
-  const confidence = typeof result?.confidence === "number" ? result.confidence : 0;
 
   async function askQuestion(event) {
     event.preventDefault();
@@ -28,10 +38,10 @@ export default function Home() {
     setResult(null);
 
     try {
-      const response = await fetch(`${API_URL}/rag/answer`, {
+      const response = await fetch(`${API_URL}/kg/query`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, k: 5 }),
+        body: JSON.stringify({ question }),
       });
       let data = {};
       try {
@@ -40,9 +50,9 @@ export default function Home() {
         data = {};
       }
       if (!response.ok) {
-        throw new Error(data.detail || "تعذر الحصول على إجابة.");
+        throw new Error(data.detail || "تعذر تنفيذ سؤال الرسم المعرفي.");
       }
-      if (!data || typeof data !== "object") {
+      if (!data || typeof data !== "object" || Array.isArray(data)) {
         throw new Error("وصلت استجابة غير مفهومة من الخدمة.");
       }
       setResult(data);
@@ -57,14 +67,13 @@ export default function Home() {
     <main dir="rtl" lang="ar">
       <section className="shell">
         <header>
-          <a className="navLink" href="/kg">
-            الانتقال إلى الرسم المعرفي
+          <a className="navLink" href="/">
+            العودة إلى صفحة RAG
           </a>
-          <p className="eyebrow">مساعد معلوماتي مبني على RAG</p>
-          <h1>Lawz AI JO</h1>
+          <p className="eyebrow">رسم معرفي تجريبي</p>
+          <h1>Lawz AI JO KG</h1>
           <p className="subtitle">
-            مساعد عربي مبسط لأسئلة قانون العمل الأردني، يعتمد على استرجاع النصوص القانونية ثم توليد إجابة
-            موثقة بالمراجع المسترجعة.
+            واجهة مستقلة لسؤال الرسم المعرفي القانوني الأردني عبر Text2Cypher وNeo4j.
           </p>
         </header>
 
@@ -79,7 +88,7 @@ export default function Home() {
           />
           <div className="actions">
             <button type="submit" disabled={loading || question.trim().length < 2}>
-              {loading ? "جارٍ السؤال..." : "اسأل"}
+              {loading ? "جارٍ السؤال..." : "اسأل الرسم المعرفي"}
             </button>
           </div>
         </form>
@@ -93,48 +102,71 @@ export default function Home() {
         </div>
 
         {error && <p className="error">{error}</p>}
-        {loading && <p className="loading">جارٍ استرجاع النصوص القانونية وصياغة الإجابة...</p>}
+        {loading && <p className="loading">جارٍ توليد Cypher وتنفيذ الاستعلام على Neo4j...</p>}
 
         {result && (
           <section className="result">
             <div className="answer panel">
               <h2>الإجابة</h2>
               <p className="answerText">{answerText || "لا توجد إجابة متاحة."}</p>
-              <p className="confidence">الثقة: {Math.round(confidence * 100)}%</p>
+              <p className="rowCount">عدد الصفوف: {rowCount}</p>
             </div>
 
-            {citations.length ? (
-              <div className="panel">
-                <h2>المراجع</h2>
-                <ul>
-                  {citations.map((citation) => (
-                    <li key={citation.chunk_id}>
-                      <strong>{citation.topic}</strong>
-                      <span>{citation.reference}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <p className="mutedNotice">لا توجد مراجع مرتبطة كافية لهذا السؤال.</p>
-            )}
+            <div className="grid">
+              <section className="panel">
+                <h2>العُقد</h2>
+                {nodes.length ? (
+                  <div className="cards">
+                    {nodes.map((node, index) => (
+                      <article key={node.id || index} className="card">
+                        <strong>{Array.isArray(node.labels) ? node.labels.join("، ") : "Node"}</strong>
+                        <span>{node.id}</span>
+                        <JsonBlock value={safeObject(node.properties)} />
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mutedNotice">لا توجد عُقد في الاستجابة.</p>
+                )}
+              </section>
 
-            {retrievedChunks.length > 0 && (
-              <details className="retrieved">
-                <summary>النصوص المسترجعة</summary>
-                <div className="chunks">
-                  {retrievedChunks.map((chunk) => (
-                    <article key={chunk.chunk_id} className="chunk">
-                      <div>
-                        <strong>{chunk.topic}</strong>
-                        <span>{chunk.reference}</span>
-                      </div>
-                      <p>{chunk.text_preview}</p>
-                    </article>
-                  ))}
-                </div>
-              </details>
-            )}
+              <section className="panel">
+                <h2>العلاقات</h2>
+                {relationships.length ? (
+                  <div className="cards">
+                    {relationships.map((relationship, index) => (
+                      <article key={relationship.id || index} className="card">
+                        <strong>{relationship.type || "Relationship"}</strong>
+                        <span>
+                          {relationship.source} ← {relationship.target}
+                        </span>
+                        <JsonBlock value={safeObject(relationship.properties)} />
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mutedNotice">لا توجد علاقات في الاستجابة.</p>
+                )}
+              </section>
+            </div>
+
+            <details className="details">
+              <summary>تفاصيل الاستعلام والسجلات</summary>
+              <div className="detailGrid">
+                <section>
+                  <h3>generated_cypher</h3>
+                  <pre dir="ltr">{generatedCypher}</pre>
+                </section>
+                <section>
+                  <h3>parameters</h3>
+                  <JsonBlock value={parameters} />
+                </section>
+                <section>
+                  <h3>records</h3>
+                  <JsonBlock value={records} />
+                </section>
+              </div>
+            </details>
 
             {disclaimer && <p className="disclaimer">{disclaimer}</p>}
           </section>
@@ -187,6 +219,10 @@ export default function Home() {
           margin: 0 0 12px;
           font-size: 20px;
         }
+        h3 {
+          margin: 0 0 8px;
+          font-size: 16px;
+        }
         .subtitle {
           max-width: 760px;
           margin: 12px 0 0;
@@ -236,7 +272,7 @@ export default function Home() {
           background: #315948;
           border-color: #315948;
           color: #ffffff;
-          min-width: 96px;
+          min-width: 150px;
         }
         button:disabled {
           opacity: 0.6;
@@ -273,8 +309,29 @@ export default function Home() {
           padding: 16px;
           background: #fbfcfc;
         }
+        .grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 16px;
+        }
+        .cards {
+          display: grid;
+          gap: 10px;
+        }
+        .card {
+          border: 1px solid #e4e9eb;
+          border-radius: 8px;
+          padding: 12px;
+          background: #ffffff;
+          min-width: 0;
+        }
+        .card span {
+          display: block;
+          margin-top: 6px;
+          color: #586772;
+          overflow-wrap: anywhere;
+        }
         .answer p,
-        .chunk p,
         .disclaimer {
           line-height: 1.8;
         }
@@ -283,62 +340,60 @@ export default function Home() {
           margin: 0;
           color: #24313c;
         }
-        .confidence {
+        .rowCount {
           color: #54705f;
           font-weight: 700;
           margin: 14px 0 0;
-        }
-        ul {
-          margin: 0;
-          padding: 0;
-          list-style: none;
-          display: grid;
-          gap: 10px;
-        }
-        li,
-        .chunk {
-          border: 1px solid #e4e9eb;
-          border-radius: 8px;
-          padding: 12px;
-          background: #fbfcfc;
         }
         .mutedNotice {
           margin: 0;
           border: 1px solid #e4e9eb;
           border-radius: 8px;
           padding: 12px 14px;
-          background: #fbfcfc;
+          background: #ffffff;
           color: #586772;
           line-height: 1.7;
         }
-        .retrieved {
+        .details {
           border: 1px solid #e4e9eb;
           border-radius: 8px;
           padding: 12px 14px;
           background: #ffffff;
         }
-        .retrieved summary {
+        .details summary {
           cursor: pointer;
           font-weight: 700;
           color: #315948;
         }
-        .chunks {
+        .detailGrid {
           display: grid;
-          gap: 10px;
+          gap: 14px;
           margin-top: 12px;
         }
-        li span,
-        .chunk span {
-          display: block;
-          margin-top: 6px;
-          color: #586772;
-          line-height: 1.6;
+        pre {
+          margin: 8px 0 0;
+          max-width: 100%;
+          overflow: auto;
+          border: 1px solid #e4e9eb;
+          border-radius: 6px;
+          background: #f6f7f8;
+          color: #24313c;
+          padding: 10px;
+          font-size: 13px;
+          line-height: 1.5;
+          text-align: left;
+          white-space: pre-wrap;
         }
         .disclaimer {
           margin: 0;
           border-top: 1px solid #e4e9eb;
           padding-top: 16px;
           color: #6b4b18;
+        }
+        @media (max-width: 760px) {
+          .grid {
+            grid-template-columns: 1fr;
+          }
         }
         @media (max-width: 640px) {
           main {

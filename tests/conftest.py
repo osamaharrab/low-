@@ -28,8 +28,12 @@ def client(monkeypatch):
     def ok_llm(settings):
         return {"ok": True, "provider": settings.llm_provider}
 
+    def ok_neo4j(settings):
+        return {"ok": True, "uri": settings.neo4j_uri, "database": settings.neo4j_database}
+
     monkeypatch.setattr("api.main.check_weaviate_ready", ok_weaviate)
     monkeypatch.setattr("api.main.check_ollama_ready", ok_ollama)
     monkeypatch.setattr("api.main.check_llm_ready", ok_llm)
+    monkeypatch.setattr("api.main.check_neo4j_ready", ok_neo4j)
     with TestClient(app) as test_client:
         yield test_client

@@ -1,0 +1,42 @@
+[
+  {
+    "question": "ما المواد المرتبطة بإنهاء عقد العمل؟",
+    "gold_cypher": "MATCH (a:Article)-[:HAS_TOPIC]->(t:Topic {name: 'إنهاء عقد العمل'}) RETURN a.reference, a.title ORDER BY toInteger(a.number)",
+    "expected_parameters": {}
+  },
+  {
+    "question": "ما المادة التي تنظم الإشعار قبل إنهاء عقد العمل غير محدد المدة؟",
+    "gold_cypher": "MATCH (a:Article {number: '23'}) RETURN a.reference, a.title, a.summary",
+    "expected_parameters": {}
+  },
+  {
+    "question": "ما المواد المرتبطة بالفصل دون إشعار؟",
+    "gold_cypher": "MATCH (a:Article {number: '28'})-[:RELATED_TO]-(related:Article) RETURN a.reference, related.reference, related.title ORDER BY toInteger(related.number)",
+    "expected_parameters": {}
+  },
+  {
+    "question": "ما المادة المتعلقة بالفصل التعسفي؟",
+    "gold_cypher": "MATCH (a:Article {number: '25'}) RETURN a.reference, a.title, a.summary",
+    "expected_parameters": {}
+  },
+  {
+    "question": "ما المواد القانونية المتعلقة بالأجور؟",
+    "gold_cypher": "MATCH (a:Article)-[:HAS_TOPIC]->(t:Topic {name: 'الأجور'}) RETURN a.reference, a.title ORDER BY toInteger(a.number)",
+    "expected_parameters": {}
+  },
+  {
+    "question": "ما المادة التي تنظم الخصم من أجر العامل؟",
+    "gold_cypher": "MATCH (a:Article {number: '47'}) RETURN a.reference, a.title, a.summary",
+    "expected_parameters": {}
+  },
+  {
+    "question": "ما المواد المتعلقة بالإجازات؟",
+    "gold_cypher": "MATCH (a:Article)-[:HAS_TOPIC]->(t:Topic {name: 'الإجازات'}) RETURN a.reference, a.title ORDER BY toInteger(a.number)",
+    "expected_parameters": {}
+  },
+  {
+    "question": "ما العلاقة بين الإجازة السنوية وبدل الإجازات غير المستخدمة؟",
+    "gold_cypher": "MATCH (a:Article {number: '61'})-[r:RELATED_TO]-(b:Article {number: '63'}) RETURN a.reference, type(r), b.reference",
+    "expected_parameters": {}
+  }
+]

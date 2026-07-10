@@ -18,8 +18,13 @@ INFLIGHT_REQUESTS = Gauge("inflight_requests", "In-flight HTTP requests.")
 RAG_ANSWERS_TOTAL = Counter("rag_answers_total", "RAG answers by outcome.", ["outcome"])
 RAG_RETRIEVED_CHUNKS = Histogram("rag_retrieved_chunks", "Number of retrieved chunks per RAG request.")
 RAG_GENERATION_ERRORS_TOTAL = Counter("rag_generation_errors_total", "RAG generation errors.")
+KG_QUERIES_TOTAL = Counter("kg_queries_total", "KG queries by outcome.", ["outcome"])
+KG_ROWS_RETURNED = Histogram("kg_rows_returned", "Rows returned per KG query.")
+KG_GENERATION_ERRORS_TOTAL = Counter("kg_generation_errors_total", "KG generation errors.")
+KG_VALIDATION_ERRORS_TOTAL = Counter("kg_validation_errors_total", "KG Cypher validation errors.")
+KG_EXECUTION_ERRORS_TOTAL = Counter("kg_execution_errors_total", "KG execution errors.")
 
-KNOWN_PATHS = {"/healthz", "/readyz", "/metrics", "/rag/answer"}
+KNOWN_PATHS = {"/healthz", "/readyz", "/metrics", "/rag/answer", "/kg/query"}
 LOGGER = logging.getLogger("lawz_ai_jo")
 
 if not LOGGER.handlers:

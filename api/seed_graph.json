@@ -1,0 +1,918 @@
+{
+  "laws": [
+    {
+      "id": "jordan_labor_law_8_1996",
+      "name": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "number": "8",
+      "year": 1996,
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    }
+  ],
+  "articles": [
+    {
+      "id": "labor_law_article_002",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "2",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 2",
+      "title": "التعريفات",
+      "summary": "صاحب العمل: كل شخص طبيعي او معنوي يستخدم باي صفة كانت شخصا او اكثر مقابل اجر نقابة اصحاب العمل: الهيئة التي تمثل اصحاب العمل العامل: كل شخص ذكرا كان او انثى يؤدي عملا لقاء اجر ويكون تابعا لصاحب العمل وتحت امرته ويشمل ذلك التجربة أو التأهيل. العمل: كل جهد فكري او جسماني يبذله العامل لقاء اجر سواء كان بشكل دائم أو عرضي أو مؤقت او موسمي العمل العرضي: العمل الذي تستدعيه ضرورات طارئة ولا تزيد مدة انجازه على ثلاثة اشهر. ا…",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_003",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "3",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 3",
+      "title": "نطاق تطبيق القانون",
+      "summary": "أ - مع مراعاة احكام الفقرة (ب) من هذه المادة تطبق احكام هذا القانون على جميع العمال واصحاب العمل باستثناء الموظفين العاملين وموظفي البلديات. ب- تحدد الاحكام التي تخضع اليها عمال الزراعة والعاملون في المنازل وطهاتها وبستانيها ومن في حكمهم بمقتضى نظام يصدر لهذه الغاية على أن يتضمن هذا النظام تنظيم عقود عملهم واوقات العمل والراحة والتفتيش واي امور اخرى تتعلق باستخدامهم.",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_004",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "4",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 4",
+      "title": "الحقوق المكتسبة وعدم التنازل",
+      "summary": "أ- لا تؤثر احكام هذا القانون على اي حق من حقوق التي يمنحها العامل اي قانون آخر او عقد عمل او اتفاق اذا كان اي منها يرتب للعامل حقوقا افضل من الحقوق المقررة له بموجب احكام هذا القانون. ب- يعتبر باطلا كل شرط في العقد او اتفاق سواء ابرم قبل هذا القانون او بعده يتنازل بموجبه اي عامل عن اي حق من حقوق التي يمنحها اياه هذا القانون.",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_015",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "15",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 15",
+      "title": "عقد العمل",
+      "summary": "أ- ينظم عقد العمل باللغة العربية وعلى نسختين على الاقل يحتفظ كل من الطرفين بنسخة منه, ويجوز للعامل اثبات حقوقه بجميع طرق الاثبات القانونية اذا لم يحرر العقد كتابة. 2- اذا كان العامل لا يحمل جنسية عربية فيراعى تنظيم نسخة اخرى من العقد بلغة اجنبية معتمدة وفق تعليمات يصدرها الوزير لهذه الغاية. ب-يعتبر العامل المعين لمدة غير محدودة بأنه مستمرا بعمله الى ان تنتهي خدمته بموجب احكام هذا القانون اما في الحالات التي يستخدم ف…",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_021",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "21",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 21",
+      "title": "انتهاء عقد العمل",
+      "summary": "ينتهي عقد العمل في اي من الحالات التالية: ا- إذا اتفق الطرفان على انهائه ب- إذا انتهت مدة عقد العمل او انتهى العمل نفسه. ج-إذا توفي العامل او اقعده مرض او عجز عن العمل وثبت ذلك بتقرير طبي صادر عن المرجع الطبي. د-إذا استوفى العامل شروط تقاعد الشيخوخة المنصوص عليها في قانون الضمان الاجتماعي الا اذا اتفق الطرفان على غير ذلك.",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_023",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "23",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 23",
+      "title": "إنهاء عقد العمل غير محدد المدة والإشعار",
+      "summary": "ا- اذا رغب احد الطرفين في انهاء عقد العمل غير المحدد المدة فيترتب عليه اشعار الطرف الاخر خطيا في انهاء العقد قبل شهر واحد على الاقل ولا يجوز سحب الإشعار إلا بموافقة الطرفين. ب- يبقى عقد العمل ساري المفعول طوال مدة الاشعار وتعتبر مدة الاشعار من مدة الخدمة. ج-اذا كان الاشعار من طرف صاحب العمل فله ان يعفي العامل من العمل خلال مدته وله ان يشغله الا في الايام السبعة الاخيرة منها ويستحق العامل اجره عن مدة الاشعار في جميع…",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_024",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "24",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 24",
+      "title": "منع الفصل بسبب الشكوى",
+      "summary": "مع مراعاة ما ورد في المادة (31) من هذا القانون لا يجوز فصل العامل أو اتخاذ أي اجراء تأديبي بحقه لأسباب تتصل بالشكاوى والمطالبات التي تقدم بها العامل إلى الجهات المختصة والمتعلقة بتطبيق أحكام هذا القانون عليه.",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_025",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "25",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 25",
+      "title": "الفصل التعسفي",
+      "summary": "إذا تبين للمحكمة المختصة في دعوى اقامها العامل خلال ستين يوما من تاريخ فصله أن الفصل كان تعسفياً ومخالفاً لأحكام هذا القانون جاز لها إصدار أمر إلى صاحب العمل بإعادة العامل إلى عمله الأصلي او بدفع تعويض له يعادل مقداره اجر نصف شهر عن كل سنة من سنوات خدمة العامل وبحد أدنى لا يقل عن أجر شهرين إضافة إلى بدل الإشعار واستحقاقاته الأخرى المنصوص عليها في المادتين (32) و (33) من هذا القانون على ان يحتسب التعويض على أساس آخر…",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_026",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "26",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 26",
+      "title": "إنهاء العقد محدد المدة",
+      "summary": "أ- إذا أنهى صاحب العمل عقد العمل محدد المدة قبل انتهاء مدته أو أنهاه العامل لأحد الأسباب الواردة في المادة (29 ) من هذا القانون يحق للعامل استيفاء جميع الحقوق والمزايا التي ينص عليها العقد كما يستحق الأجور التي تستحق حتى انتهاء المدة المتبقية من العقد ما لم يكن إنهاء عقد العمل فصلا بموجب المادة ( 28 ) من هذا القانون. ب - إذا كان انهاء العقد محدد المدة صادرا عن العامل في غير الحالات المنصوص عليها في المادة (29) من هذ…",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_027",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "27",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 27",
+      "title": "حالات لا يجوز فيها إنهاء خدمة العامل",
+      "summary": "أ - مع مراعاة أحكام الفقرة (ب) من هذه المادة لا يجوز لصاحب العمل أنهاء خدمة العامل أو توجيه إشعار إليه لإنهاء خدمته في أي من الحالات التالية: 1 - المرأة العاملة الحامل ابتداء من الشهر السادس من حملها أو خلال اجازة الأمومة. 2 - العامل المكلف بخدمة العلم أو الخدمة الاحتياطية في أثناء قيامه بتلك الخدمة. 3- العامل في أثناء اجازته السنوية أو المرضية أو الاجازة الممنوحة له لأغراض الثقافة العمالية أو الحج أو في أثناء اجازت…",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_028",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "28",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 28",
+      "title": "فصل العامل دون إشعار",
+      "summary": "يجوز لصاحب العمل فصل العامل دون إشعار في أي من الحالات التالية: أ- إذا انتحل العامل شخصية أو هوية غيره أو قدم شهادات أو وثائق مزورة بقصد جلب المنفعة لنفسه أو الإضرار بغيره. ب- إذا لم يقم العامل بالوفاء بالالتزامات المترتبة عليه بموجب عقد العمل. ج- إذا ارتكب العامل خطأ نشأ عنه خسارة مادية جسيمة لصاحب العمل، شريطة أن يبلغ صاحب العمل الجهة أو الجهات المختصة بالحادث خلال خمسة أيام من وقت علمه بوقوعه. د- إذا خالف العامل…",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_029",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "29",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 29",
+      "title": "ترك العامل العمل دون إشعار",
+      "summary": "أ- يحق للعامل أن يترك العمل دون إشعار صاحب العمل على أن يقوم بتبليغ وزارة العمل خلال اسبوعين من تاريخ ترك العمل وبالطرق التي تحددها الوزارة مع احتفاظه بحقوقه القانونية عن انتهاء الخدمة وما يترتب له من تعويضات عطل وضرر وذلك في أي من الحالات التالية. 1- استخدامه في عمل يختلف في نوعه اختلافا بينا عن العمل الذي اتفق على استخدامه فيه بمقتضى عقد العمل على أن تراعى في ذلك أحكام المادة (17) من هذا القانون. 2- استخدامه بصورة…",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_030",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "30",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 30",
+      "title": "شهادة الخدمة",
+      "summary": "حق العامل في شهادة الخدمة عند انتهاء العمل يلتزم صاحب العمل، عند انتهاء خدمة العامل وبناءً على طلبه، بإعطائه شهادة خدمة. يجب أن تتضمن الشهادة اسم العامل، نوع العمل الذي كان يقوم به، تاريخ التحاقه بالخدمة، وتاريخ انتهاء خدمته. كما يجب على صاحب العمل إعادة أي أوراق أو شهادات أو أدوات كان العامل قد أودعها لديه.",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_031",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "31",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 31",
+      "title": "إنهاء العمل لأسباب اقتصادية أو فنية",
+      "summary": "إنهاء أو تعليق عقود العمل بسبب ظروف اقتصادية أو فنية. ا. إذا اقتضت ظروف صاحب العمل الاقتصادية أو الفنية تقليص حجم العمل أو استبدال نظام انتاج باخر او التوقف نهائيا عن العمل مما قد يترتب عليه انهاء عقود عمل غير محدودة المدة أو تعليقها كلها أو بعضها، فعليه تبليغ الوزير خطيا معززا بالأسباب المبررة بذلك قبل اتخاذ أي إجراء بهذا الخصوص. ب- يشكل الوزير لجنة من أطراف الانتاج الثلاثة للتحقق من سلامة اجراءات صاحب العمل وتقديم…",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_032",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "32",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 32",
+      "title": "مكافأة نهاية الخدمة",
+      "summary": "يحق للعامل غير الخاضع لأحكام قانون الضمان الاجتماعي وتنتهي خدمته لأي سبب من الأسباب الحصول على مكافأة نهاية الخدمة بمعدل أجر شهر عن كل سنة من خدمته الفعلية، ويعطى عن كسور السنة مكافأة نسبية. وتحتسب المكافأة على أساس آخر أجر تقاضاه خلال مدة استخدامه. أما إذا كان الأجر كله أو بعضه يحسب على أساس العمولة أو القطعة، فيعتمد لحساب المكافأة المتوسط الشهري لما تقاضاه العامل فعلا خلال الاثني عشر شهرا السابقة لانتهاء خدمته، وإ…",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_035",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "35",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 35",
+      "title": "فترة التجربة",
+      "summary": "توضح أحكام تعيين العامل تحت التجربة ومدة فترة التجربة وحقوق الطرفين خلالها. ا - لصاحب العمل استخدام أي عامل قيد التجربة وذلك للتحقق من كفاءته وامكاناته للقيام بالعمل المطلوب ويشترط في ذلك ألا تزيد مدة التجربة في أي حالة من الحالات على ثلاثة أشهر وأن لا يقل أجر العامل قيد التجربة عن الحد الأدنى المقرر للأجور. ب - يحق لصاحب العمل انهاء استخدام العامل تحت التجربة دون إشعار أو مكافأة خلال مدة التجربة. ج - إذا استمر العا…",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_045",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "45",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 45",
+      "title": "تحديد الأجر",
+      "summary": "يحدد مقدار الأجر في العقد وإذا لم ينص عقد العمل عليه فيأخذ العامل الأجر المقدر لعمل من نفس النوع إن وجد وإلا قدر طبقا للعرف فإذا لم يوجد العرف تولت المحكمة تقديره بمقتضى أحكام هذا القانون باعتباره نزاعا عماليا على الأجر.",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_046",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "46",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 46",
+      "title": "دفع الأجر",
+      "summary": "ا- يدفع الأجر وبدل العمل الإضافي خلال مدة لا تزيد على سبعة أيام من تاريخ استحقاقه ولا يجوز لصاحب العمل حسم أي جزء منها إلا في الحالات التي يجيزها القانون. ب -أن توقيع العامل على أي كشف أو سجل للأجور أو على ايصال بقيمة المبلغ المسجل فيه لا يعني إسقاط حقه في أي زيادة على المبلغ المقبوض بموجب القانون أو النظام أو العقد.",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_047",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "47",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 47",
+      "title": "الخصم من الأجر",
+      "summary": "لا يجوز حسم أي مبلغ من أجر العامل إلا في الحالات التالية. ا - استرداد ما قدم صاحب العمل من سلف للعامل بحيث لا يزيد كل قسط يتم استرداده من السلفة على (10%) من الأجر. ب - استرداد أي مبلغ دفع للعامل زيادة على استحقاقه ج - اشتراكات الضمان الاجتماعي واقساطه المستحقة على العامل والحسميات الواجب اجراؤها بموجب القوانين الأخرى. د - اشتراكات العامل في صندوق الادخار. ه - الحسميات الخاصة بتسهيلات الاسكان التي يقدمها صاحب العمل…",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_052",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "52",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 52",
+      "title": "الحد الأدنى للأجور",
+      "summary": "أ- يشكل مجلس الوزراء بناء على تنسيب الوزير لجنة تتألف من عدد متساو من ممثلين عن الوزارة والعمال وأصحاب العمل ويعين المجلس رئيسا لها من بين أعضائها. ب تتولى اللجنة الثلاثية تحديد الحد الأدنى للأجور وذلك بصورة عامة أو بالنسبة لمنطقة أو لمهنة معينة أو لفئة عمرية معينة على أن يؤخذ بعين الاعتبار مؤشرات تكاليف المعيشة التي تصدرها الجهات الرسمية المختصة، وتنشر قرارات اللجنة في الجريدة الرسمية. ج - تتخذ اللجنة الثلاثية قرار…",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_053",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "53",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 53",
+      "title": "دفع أجر أقل من الحد الأدنى",
+      "summary": "يعاقب صاحب العمل بغرامة لا تقل عن خمسمائة دينار ولا تزيد على ألف دينار عن كل حالة يدفع فيها إلى عامل أجرا يقل عن الحد الأدنى للأجور أو عن أي تمييز بالأجر بين الجنسين عن العمل ذي القيمة المتساوية وذلك إضافة إلى الحكم للعامل بفرق الأجر وتضاعف العقوبة كلما تكررت المخالفة.",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_059",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "59",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 59",
+      "title": "العمل الإضافي والعمل في العطل",
+      "summary": "أ- يجوز تشغيل العامل بموافقته أكثر من ساعات العمل اليومية أو الأسبوعية، على أن يتقاضى عن ساعة العمل الإضافية أجرا لا يقل عن 125% من أجره المعتاد. ب- إذا اشتغل العامل في يوم عطلته الأسبوعية أو أيام الأعياد الدينية أو العطل الرسمية، يتقاضى لقاء عمله عن ذلك اليوم أجرا إضافيا لا يقل عن 150% من أجره المعتاد.",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_060",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "60",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 60",
+      "title": "العطلة الأسبوعية",
+      "summary": "ا - يكون يوم الجمعة من كل أسبوع يوم العطلة الأسبوعية للعامل الا إذا اقتضت طبيعة العمل غير ذلك. ب - يجوز للعامل بموافقة صاحب العمل جمع أيام عطلته الأسبوعية والحصول عليها خلال مدة لا تزيد على شهر. ج - يكون يوم العطلة الأسبوعية للعامل بأجر كامل، إلا إذا كان يعمل على أساس يومي أو أسبوعي فيستحق في كلتا الحالتين أجر يوم العطلة الأسبوعية إذا عمل ستة أيام متصلة قبل اليوم المحدد للعطلة، ويستحق من ذلك الأجر بنسبة الأيام التي…",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_061",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "61",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 61",
+      "title": "الإجازة السنوية",
+      "summary": "ا - لكل عامل الحق بإجازة سنوية بأجر كامل لمدة أربعة عشر يوما عن كل سنة خدمة إلا إذا تم الاتفاق على أكثر من ذلك على أن مدة الاجازة السنوية واحدا وعشرين يوما إذا أمضى في الخدمة لدى صاحب العمل نفسه خمس سنوات متصلة، ولا تحسب أيام العطل الرسمية والأعياد الدينية وأيام العطلة الأسبوعية من الاجازة السنوية ب - إذا لم تبلغ مدة خدمة العامل السنة فيحق له الحصول على اجازة بأجر بنسبة المدة التي عمل خلالها في السنة. ج - يجوز تأجيل…",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_063",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "63",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 63",
+      "title": "بدل الإجازات غير المستخدمة",
+      "summary": "إذا انتهت خدمة العامل لأي سبب من الأسباب قبل أن يستعمل اجازته السنوية فيحق له تقاضي الأجر عن الأيام التي لم يستعملها من تلك الاجازة.",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_064",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "64",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 64",
+      "title": "بطلان التنازل عن الإجازة",
+      "summary": "يعتبر باطلا كل اتفاق يقضي بتنازل العامل عن اجازته السنوية أو عن أي جزء منها.",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_065",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "65",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 65",
+      "title": "الإجازة المرضية",
+      "summary": "لكل عامل الحق في إجازة مرضية مدتها أربعة عشر يوما خلال السنة الواحدة بأجر كامل بناء على تقرير من الطبيب المعتمد من قبل المؤسسة. ويجوز تجديدها لمدة أربعة عشر يوما أخرى بأجر كامل إذا كان نزيل أحد المستشفيات، بناء على تقرير من الطبيب المعتمد من قبل المؤسسات التي يقل عدد عمالها عن عشرين عاملا. أما المؤسسات التي يزيد عدد عمالها على عشرين عاملا، فيتم اعتماد لجنة طبية خاصة لغايات اعتماد التقارير الطبية.",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_066",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "66",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 66",
+      "title": "إجازات إضافية",
+      "summary": "ا - لكل عامل الحق في اجازة مدتها أربعة عشر يوما في السنة مدفوعة الأجر في أي من الحالات التالية. ا - إذا التحق بدورة للثقافة العمالية معتمدة من الوزارة أو الاتحاد العام لنقابات العمال بناء على ترشيح صاحب العمل أو مدير المؤسسة بالتنسيق مع النقابة المعنية. 2-الأداء فريضة الحج ويشترط لمنح هذه الاجازة أن يكون العامل قد عمل مدة خمس سنوات متواصلة على الأقل لدى صاحب العمل ولا تعطى هذه الاجازة إلا لمرة واحدة خلال مدة خدمته.…",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    },
+    {
+      "id": "labor_law_article_070",
+      "law_id": "jordan_labor_law_8_1996",
+      "number": "70",
+      "reference": "قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 70",
+      "title": "إجازة الأمومة",
+      "summary": "للمرأة العاملة الحق في الحصول على إجازة أمومة بأجر كامل قبل الوضع وبعده مجموع مدتها عشرة أسابيع، على أن لا تقل المدة التي تقع من هذه الاجازة بعد الوضع عن ستة أسابيع، ويحظر تشغيلها قبل انقضاء تلك المدة.",
+      "source_name": "قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته",
+      "jurisdiction": "Jordan",
+      "source_type": "official_law_selected"
+    }
+  ],
+  "topics": [
+    {
+      "id": "topic_definitions_scope",
+      "name": "التعريفات والنطاق",
+      "description": "مواد قانونية مرتبطة بموضوع التعريفات والنطاق."
+    },
+    {
+      "id": "topic_worker_rights",
+      "name": "حقوق العامل",
+      "description": "مواد قانونية مرتبطة بموضوع حقوق العامل."
+    },
+    {
+      "id": "topic_employment_contract",
+      "name": "عقد العمل",
+      "description": "مواد قانونية مرتبطة بموضوع عقد العمل."
+    },
+    {
+      "id": "topic_termination",
+      "name": "إنهاء عقد العمل",
+      "description": "مواد قانونية مرتبطة بموضوع إنهاء عقد العمل."
+    },
+    {
+      "id": "topic_end_of_service",
+      "name": "مستحقات نهاية الخدمة",
+      "description": "مواد قانونية مرتبطة بموضوع مستحقات نهاية الخدمة."
+    },
+    {
+      "id": "topic_wages",
+      "name": "الأجور",
+      "description": "مواد قانونية مرتبطة بموضوع الأجور."
+    },
+    {
+      "id": "topic_hours_holidays",
+      "name": "ساعات العمل والعطل",
+      "description": "مواد قانونية مرتبطة بموضوع ساعات العمل والعطل."
+    },
+    {
+      "id": "topic_leaves",
+      "name": "الإجازات",
+      "description": "مواد قانونية مرتبطة بموضوع الإجازات."
+    }
+  ],
+  "regulations": [],
+  "relationships": [
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_002",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_002",
+      "type": "HAS_TOPIC",
+      "target": "topic_definitions_scope",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_003",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_003",
+      "type": "HAS_TOPIC",
+      "target": "topic_definitions_scope",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_004",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_004",
+      "type": "HAS_TOPIC",
+      "target": "topic_worker_rights",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_015",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_015",
+      "type": "HAS_TOPIC",
+      "target": "topic_employment_contract",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_021",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_021",
+      "type": "HAS_TOPIC",
+      "target": "topic_termination",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_023",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_023",
+      "type": "HAS_TOPIC",
+      "target": "topic_termination",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_024",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_024",
+      "type": "HAS_TOPIC",
+      "target": "topic_termination",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_025",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_025",
+      "type": "HAS_TOPIC",
+      "target": "topic_termination",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_026",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_026",
+      "type": "HAS_TOPIC",
+      "target": "topic_termination",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_027",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_027",
+      "type": "HAS_TOPIC",
+      "target": "topic_termination",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_028",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_028",
+      "type": "HAS_TOPIC",
+      "target": "topic_termination",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_029",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_029",
+      "type": "HAS_TOPIC",
+      "target": "topic_termination",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_030",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_030",
+      "type": "HAS_TOPIC",
+      "target": "topic_worker_rights",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_031",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_031",
+      "type": "HAS_TOPIC",
+      "target": "topic_termination",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_032",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_032",
+      "type": "HAS_TOPIC",
+      "target": "topic_end_of_service",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_035",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_035",
+      "type": "HAS_TOPIC",
+      "target": "topic_employment_contract",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_045",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_045",
+      "type": "HAS_TOPIC",
+      "target": "topic_wages",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_046",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_046",
+      "type": "HAS_TOPIC",
+      "target": "topic_wages",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_047",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_047",
+      "type": "HAS_TOPIC",
+      "target": "topic_wages",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_052",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_052",
+      "type": "HAS_TOPIC",
+      "target": "topic_wages",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_053",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_053",
+      "type": "HAS_TOPIC",
+      "target": "topic_wages",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_059",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_059",
+      "type": "HAS_TOPIC",
+      "target": "topic_hours_holidays",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_060",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_060",
+      "type": "HAS_TOPIC",
+      "target": "topic_hours_holidays",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_061",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_061",
+      "type": "HAS_TOPIC",
+      "target": "topic_leaves",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_063",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_063",
+      "type": "HAS_TOPIC",
+      "target": "topic_leaves",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_064",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_064",
+      "type": "HAS_TOPIC",
+      "target": "topic_leaves",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_065",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_065",
+      "type": "HAS_TOPIC",
+      "target": "topic_leaves",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_066",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_066",
+      "type": "HAS_TOPIC",
+      "target": "topic_leaves",
+      "properties": {}
+    },
+    {
+      "source": "jordan_labor_law_8_1996",
+      "type": "HAS_ARTICLE",
+      "target": "labor_law_article_070",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_070",
+      "type": "HAS_TOPIC",
+      "target": "topic_leaves",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_024",
+      "type": "REFERS_TO",
+      "target": "labor_law_article_031",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_025",
+      "type": "REFERS_TO",
+      "target": "labor_law_article_032",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_026",
+      "type": "REFERS_TO",
+      "target": "labor_law_article_028",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_026",
+      "type": "REFERS_TO",
+      "target": "labor_law_article_029",
+      "properties": {}
+    },
+    {
+      "source": "labor_law_article_021",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_023",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_023",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_025",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_023",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_028",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_024",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_025",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_025",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_027",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_025",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_028",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_026",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_028",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_026",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_029",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_027",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_070",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_028",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_029",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_031",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_032",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_045",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_046",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_046",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_047",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_047",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_052",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_052",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_053",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_059",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_060",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_061",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_063",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_061",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_064",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_061",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_065",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_061",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_066",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    },
+    {
+      "source": "labor_law_article_065",
+      "type": "RELATED_TO",
+      "target": "labor_law_article_070",
+      "properties": {
+        "reason": "موضوع قانوني مترابط"
+      }
+    }
+  ]
+}

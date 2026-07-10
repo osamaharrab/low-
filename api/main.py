@@ -7,8 +7,14 @@ from fastapi.responses import JSONResponse
 
 from api.deps import Settings, get_settings
 from api.generator import GeneratorError, INSUFFICIENT_ANSWER
-from api.models import HealthResponse, RAGRequest, RAGResponse
+from api.kg import KGExecutionError, UnsupportedCypherError, query_knowledge_graph
+from api.models import HealthResponse, KGRequest, KGResponse, RAGRequest, RAGResponse
 from api.observability import (
+    KG_EXECUTION_ERRORS_TOTAL,
+    KG_GENERATION_ERRORS_TOTAL,
+    KG_QUERIES_TOTAL,
+    KG_ROWS_RETURNED,
+    KG_VALIDATION_ERRORS_TOTAL,
     RAG_ANSWERS_TOTAL,
     RAG_GENERATION_ERRORS_TOTAL,
     RAG_RETRIEVED_CHUNKS,
@@ -80,6 +86,29 @@ def check_llm_ready(settings: Settings) -> dict[str, object]:
     }
 
 
+def check_neo4j_ready(settings: Settings) -> dict[str, object]:
+    try:
+        from neo4j import GraphDatabase, Query
+
+        auth = (settings.neo4j_user, settings.neo4j_password)
+        query = Query("RETURN 1 AS ok", timeout=3)
+        with GraphDatabase.driver(settings.neo4j_uri, auth=auth) as driver:
+            with driver.session(database=settings.neo4j_database) as session:
+                record = session.run(query).single()
+        return {
+            "ok": bool(record and record.get("ok") == 1),
+            "uri": settings.neo4j_uri,
+            "database": settings.neo4j_database,
+        }
+    except Exception as exc:
+        return {
+            "ok": False,
+            "uri": settings.neo4j_uri,
+            "database": settings.neo4j_database,
+            "error": type(exc).__name__,
+        }
+
+
 def create_app() -> FastAPI:
     app = FastAPI(title="Lawz AI JO", version="0.1.0")
     settings = get_settings()
@@ -101,6 +130,7 @@ def create_app() -> FastAPI:
     def readyz(settings: Settings = Depends(get_settings)):
         dependencies = {
             "weaviate": check_weaviate_ready(settings),
+            "neo4j": check_neo4j_ready(settings),
             "llm": check_llm_ready(settings),
         }
         ready = all(bool(item.get("ok")) for item in dependencies.values())
@@ -128,6 +158,28 @@ def create_app() -> FastAPI:
         outcome = "abstained" if INSUFFICIENT_ANSWER in response.answer else "answered"
         RAG_ANSWERS_TOTAL.labels(outcome=outcome).inc()
         RAG_RETRIEVED_CHUNKS.observe(len(response.retrieved_chunks))
+        return response
+
+    @app.post("/kg/query", response_model=KGResponse)
+    def kg_query(request: KGRequest, settings: Settings = Depends(get_settings)) -> KGResponse:
+        try:
+            response = query_knowledge_graph(request.question, settings)
+        except GeneratorError as exc:
+            KG_QUERIES_TOTAL.labels(outcome="generation_error").inc()
+            KG_GENERATION_ERRORS_TOTAL.inc()
+            raise HTTPException(status_code=503, detail=f"LLM provider unavailable: {exc}") from exc
+        except UnsupportedCypherError as exc:
+            KG_QUERIES_TOTAL.labels(outcome="validation_error").inc()
+            KG_VALIDATION_ERRORS_TOTAL.inc()
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except KGExecutionError as exc:
+            KG_QUERIES_TOTAL.labels(outcome="execution_error").inc()
+            KG_EXECUTION_ERRORS_TOTAL.inc()
+            raise HTTPException(status_code=503, detail="Neo4j unavailable or query failed.") from exc
+
+        outcome = "empty" if response.row_count == 0 else "answered"
+        KG_QUERIES_TOTAL.labels(outcome=outcome).inc()
+        KG_ROWS_RETURNED.observe(response.row_count)
         return response
 
     return app

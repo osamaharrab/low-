@@ -23,6 +23,14 @@ class Settings(BaseSettings):
     ollama_model: str = "qwen3:4b"
     ollama_timeout_seconds: float = 120
 
+    neo4j_uri: str = "bolt://neo4j:7687"
+    neo4j_user: str = "neo4j"
+    neo4j_password: str = ""
+    neo4j_database: str = "neo4j"
+    kg_query_limit: int = 25
+    kg_timeout_seconds: float = 15
+    kg_max_cypher_chars: int = 4000
+
     api_url: str = "http://api:8000"
     next_public_api_url: str = "http://localhost:8001"
     web_origin: str = "http://localhost:3001"

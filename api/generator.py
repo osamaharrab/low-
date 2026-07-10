@@ -32,6 +32,15 @@ def clean_llm_output(text: str | None) -> str:
     return cleaned or INSUFFICIENT_ANSWER
 
 
+def clean_structured_llm_output(text: str | None) -> str:
+    cleaned = THINK_BLOCK_RE.sub("", text or "")
+    cleaned = THINK_TAG_RE.sub("", cleaned)
+    cleaned = cleaned.replace("\r\n", "\n").replace("\r", "\n")
+    cleaned = re.sub(r"[ \t]+\n", "\n", cleaned)
+    cleaned = EXCESSIVE_BLANK_LINES_RE.sub("\n\n", cleaned)
+    return cleaned.strip()
+
+
 def _provider_name(settings: Settings) -> str:
     return (settings.llm_provider or "ollama").strip().lower()
 
@@ -115,3 +124,15 @@ def generate_answer(system_prompt: str, user_prompt: str, settings: Settings) ->
         raise GeneratorError(f"Unsupported LLM provider: {settings.llm_provider}")
 
     return clean_llm_output(answer)
+
+
+def generate_structured_text(system_prompt: str, user_prompt: str, settings: Settings) -> str:
+    provider = _provider_name(settings)
+    if provider in {"xai", "grok"}:
+        answer = _generate_with_xai(system_prompt, user_prompt, settings)
+    elif provider == "ollama":
+        answer = _generate_with_ollama(system_prompt, user_prompt, settings)
+    else:
+        raise GeneratorError(f"Unsupported LLM provider: {settings.llm_provider}")
+
+    return clean_structured_llm_output(answer)
