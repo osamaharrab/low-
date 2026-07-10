@@ -46,6 +46,40 @@ def check_ollama_ready(settings: Settings) -> dict[str, object]:
         return {"ok": False, "url": url, "error": str(exc)}
 
 
+def check_groq_ready(settings: Settings) -> dict[str, object]:
+    api_key = (settings.groq_api_key or "").strip()
+    api_key_configured = bool(api_key) and api_key != "your_groq_api_key_here"
+    config_present = bool((settings.groq_base_url or "").strip()) and bool((settings.groq_model or "").strip())
+    ok = api_key_configured and config_present
+    payload: dict[str, object] = {
+        "ok": ok,
+        "provider": "groq",
+        "base_url": settings.groq_base_url.rstrip("/"),
+        "model": settings.groq_model,
+        "api_key_configured": api_key_configured,
+        "config_present": config_present,
+    }
+    if not ok:
+        payload["error"] = "Groq provider is not fully configured."
+    return payload
+
+
+def check_llm_ready(settings: Settings) -> dict[str, object]:
+    provider = (settings.llm_provider or "ollama").strip().lower()
+    if provider == "ollama":
+        result = check_ollama_ready(settings)
+        result["provider"] = "ollama"
+        result["model"] = settings.ollama_model
+        return result
+    if provider == "groq":
+        return check_groq_ready(settings)
+    return {
+        "ok": False,
+        "provider": provider,
+        "error": f"Unsupported LLM_PROVIDER: {settings.llm_provider}",
+    }
+
+
 def create_app() -> FastAPI:
     app = FastAPI(title="Lawz AI JO", version="0.1.0")
     settings = get_settings()
@@ -67,7 +101,7 @@ def create_app() -> FastAPI:
     def readyz(settings: Settings = Depends(get_settings)):
         dependencies = {
             "weaviate": check_weaviate_ready(settings),
-            "ollama": check_ollama_ready(settings),
+            "llm": check_llm_ready(settings),
         }
         ready = all(bool(item.get("ok")) for item in dependencies.values())
         payload = {
@@ -86,7 +120,7 @@ def create_app() -> FastAPI:
         except GeneratorError as exc:
             RAG_ANSWERS_TOTAL.labels(outcome="error").inc()
             RAG_GENERATION_ERRORS_TOTAL.inc()
-            raise HTTPException(status_code=503, detail=f"Ollama unavailable: {exc}") from exc
+            raise HTTPException(status_code=503, detail=f"LLM provider unavailable: {exc}") from exc
         except Exception:
             RAG_ANSWERS_TOTAL.labels(outcome="error").inc()
             raise

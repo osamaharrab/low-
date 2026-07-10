@@ -11,6 +11,14 @@ class Settings(BaseSettings):
     rag_prompt_top_n: int = 3
     chunk_text_limit: int = 900
 
+    llm_provider: str = "ollama"
+    groq_api_key: str = ""
+    groq_base_url: str = "https://api.groq.com/openai/v1"
+    groq_model: str = "llama-3.3-70b-versatile"
+    llm_timeout_seconds: float = 30
+    llm_temperature: float = 0.1
+    llm_max_tokens: int = 650
+
     ollama_base_url: str = "http://host.docker.internal:11434"
     ollama_model: str = "qwen3:4b"
     ollama_timeout_seconds: float = 120

@@ -25,7 +25,11 @@ def client(monkeypatch):
     def ok_ollama(settings):
         return {"ok": True, "status_code": 200, "url": settings.ollama_base_url}
 
+    def ok_llm(settings):
+        return {"ok": True, "provider": settings.llm_provider}
+
     monkeypatch.setattr("api.main.check_weaviate_ready", ok_weaviate)
     monkeypatch.setattr("api.main.check_ollama_ready", ok_ollama)
+    monkeypatch.setattr("api.main.check_llm_ready", ok_llm)
     with TestClient(app) as test_client:
         yield test_client
