@@ -16,8 +16,8 @@
   },
   {
     "question": "هل يجوز الخصم من أجر العامل؟",
-    "expected_topic": "الأجر",
-    "expected_reference_contains": "صفحة 64"
+    "expected_topic": "الخصم من الأجر",
+    "expected_reference_contains": "المادة 47"
   },
   {
     "question": "ما هي فترة التجربة في عقد العمل؟",
