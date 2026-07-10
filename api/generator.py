@@ -30,9 +30,9 @@ def _provider_name(settings: Settings) -> str:
     return (settings.llm_provider or "ollama").strip().lower()
 
 
-def _has_groq_api_key(settings: Settings) -> bool:
-    api_key = (settings.groq_api_key or "").strip()
-    return bool(api_key) and api_key != "your_groq_api_key_here"
+def _has_xai_api_key(settings: Settings) -> bool:
+    api_key = (settings.xai_api_key or "").strip()
+    return bool(api_key) and api_key != "your_xai_api_key_here"
 
 
 def _generate_with_ollama(system_prompt: str, user_prompt: str, settings: Settings) -> str:
@@ -61,17 +61,17 @@ def _generate_with_ollama(system_prompt: str, user_prompt: str, settings: Settin
     return str(message.get("content") or "")
 
 
-def _generate_with_groq(system_prompt: str, user_prompt: str, settings: Settings) -> str:
-    if not _has_groq_api_key(settings):
-        raise GeneratorError("GROQ_API_KEY is required when LLM_PROVIDER=groq")
+def _generate_with_xai(system_prompt: str, user_prompt: str, settings: Settings) -> str:
+    if not _has_xai_api_key(settings):
+        raise GeneratorError("XAI_API_KEY is required when LLM_PROVIDER=xai")
 
-    url = f"{settings.groq_base_url.rstrip('/')}/chat/completions"
+    url = f"{settings.xai_base_url.rstrip('/')}/chat/completions"
     headers = {
-        "Authorization": f"Bearer {settings.groq_api_key.strip()}",
+        "Authorization": f"Bearer {settings.xai_api_key.strip()}",
         "Content-Type": "application/json",
     }
     payload = {
-        "model": settings.groq_model,
+        "model": settings.xai_model,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -91,18 +91,21 @@ def _generate_with_groq(system_prompt: str, user_prompt: str, settings: Settings
         choices = data["choices"]
         message = choices[0]["message"]
     except (KeyError, IndexError, TypeError) as exc:
-        raise GeneratorError("Groq returned an unusable response") from exc
+        raise GeneratorError("xAI returned an unusable response") from exc
 
-    return str(message.get("content") or "")
+    content = str(message.get("content") or "")
+    if not content.strip():
+        raise GeneratorError("xAI returned empty content")
+    return content
 
 
 def generate_answer(system_prompt: str, user_prompt: str, settings: Settings) -> str:
     provider = _provider_name(settings)
-    if provider == "groq":
-        answer = _generate_with_groq(system_prompt, user_prompt, settings)
+    if provider in {"xai", "grok"}:
+        answer = _generate_with_xai(system_prompt, user_prompt, settings)
     elif provider == "ollama":
         answer = _generate_with_ollama(system_prompt, user_prompt, settings)
     else:
-        raise GeneratorError(f"Unsupported LLM_PROVIDER: {settings.llm_provider}")
+        raise GeneratorError(f"Unsupported LLM provider: {settings.llm_provider}")
 
     return clean_llm_output(answer)

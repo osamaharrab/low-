@@ -46,21 +46,21 @@ def check_ollama_ready(settings: Settings) -> dict[str, object]:
         return {"ok": False, "url": url, "error": str(exc)}
 
 
-def check_groq_ready(settings: Settings) -> dict[str, object]:
-    api_key = (settings.groq_api_key or "").strip()
-    api_key_configured = bool(api_key) and api_key != "your_groq_api_key_here"
-    config_present = bool((settings.groq_base_url or "").strip()) and bool((settings.groq_model or "").strip())
+def check_xai_ready(settings: Settings) -> dict[str, object]:
+    api_key = (settings.xai_api_key or "").strip()
+    api_key_configured = bool(api_key) and api_key != "your_xai_api_key_here"
+    config_present = bool((settings.xai_base_url or "").strip()) and bool((settings.xai_model or "").strip())
     ok = api_key_configured and config_present
     payload: dict[str, object] = {
         "ok": ok,
-        "provider": "groq",
-        "base_url": settings.groq_base_url.rstrip("/"),
-        "model": settings.groq_model,
+        "provider": "xai",
+        "base_url": settings.xai_base_url.rstrip("/"),
+        "model": settings.xai_model,
         "api_key_configured": api_key_configured,
         "config_present": config_present,
     }
     if not ok:
-        payload["error"] = "Groq provider is not fully configured."
+        payload["error"] = "xAI provider is not fully configured."
     return payload
 
 
@@ -71,8 +71,8 @@ def check_llm_ready(settings: Settings) -> dict[str, object]:
         result["provider"] = "ollama"
         result["model"] = settings.ollama_model
         return result
-    if provider == "groq":
-        return check_groq_ready(settings)
+    if provider in {"xai", "grok"}:
+        return check_xai_ready(settings)
     return {
         "ok": False,
         "provider": provider,
