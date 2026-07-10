@@ -2,12 +2,18 @@
 
 Lawz AI JO is an Arabic Retrieval-Augmented Generation (RAG) assistant for Jordanian labor-law information. It is an informational legal explainer, not a lawyer and not legal advice.
 
+The project is intentionally focused. It answers questions about Jordanian labor/employment law using retrieved local legal chunks, then generates a grounded Arabic answer with backend-generated citations.
+
 ## What It Does
 
-- Takes Arabic legal-information questions from the web UI or API.
+- Takes Arabic labor-law questions from the web UI or API.
+- Embeds the question with `intfloat/multilingual-e5-small`.
 - Retrieves relevant Jordanian labor-law chunks from Weaviate.
-- Calls local Ollama with `qwen3:4b`.
-- Returns an Arabic answer, backend-generated citations, retrieved chunk previews, confidence, and a legal disclaimer.
+- Reranks retrieved chunks with a small lexical-overlap boost.
+- Calls the configured LLM provider.
+- Returns a clean Arabic answer, backend-generated citations, retrieved chunk previews, confidence, and a legal disclaimer.
+- Returns an insufficient-evidence answer when the retrieved context is not enough.
+- Clears citations for insufficient or weak-evidence answers so unrelated references are not shown.
 
 ## What It Does Not Do
 
@@ -17,38 +23,97 @@ Lawz AI JO is an Arabic Retrieval-Augmented Generation (RAG) assistant for Jorda
 - No risk scoring.
 - No Neo4j.
 - No knowledge graph.
-- No paid APIs.
-- Not a broad legal chatbot.
+- No LangChain.
+- No broad legal-chatbot behavior.
+- No production legal-advice workflow.
+
+## Current LLM Provider
+
+The primary fast generation path is xAI / Grok:
+
+```env
+LLM_PROVIDER=xai
+XAI_BASE_URL=https://api.x.ai/v1
+XAI_MODEL=grok-4.3
+```
+
+Ollama is still available as a local option:
+
+```env
+LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://host.docker.internal:11434
+OLLAMA_MODEL=qwen3:4b
+```
+
+Do not use a Groq key here. xAI keys usually start with `xai-` and must be sent to `https://api.x.ai/v1`.
 
 ## Architecture
 
 ```text
-User -> Web UI -> FastAPI -> Weaviate -> retrieved chunks -> Ollama qwen3:4b -> answer/citations
+User
+  -> Web UI
+  -> FastAPI /rag/answer
+  -> question embedding
+  -> Weaviate LegalChunk retrieval
+  -> reranked legal chunks
+  -> grounded Arabic prompt
+  -> xAI/Grok or Ollama
+  -> answer + backend citations + disclaimer
 ```
 
-Ollama does not run inside Docker. It must run on your host machine. The API container reaches it with:
-
-```text
-OLLAMA_BASE_URL=http://host.docker.internal:11434
-```
+Citations are created by the backend from retrieved chunks. The LLM is not trusted to invent or format citations.
 
 ## Services And Ports
 
-| Service | URL |
-| --- | --- |
-| Web UI | http://localhost:3001 |
-| API | http://localhost:8001 |
-| Weaviate | http://localhost:8081 |
-| Ollama | http://localhost:11434 |
+| Service | URL | Notes |
+| --- | --- | --- |
+| Web UI | http://localhost:3001 | Next.js UI |
+| API | http://localhost:8001 | FastAPI |
+| Weaviate | http://localhost:8081 | Vector database |
+| Metrics | http://localhost:8001/metrics/ | Prometheus text |
+| Ollama | http://localhost:11434 | Only needed when `LLM_PROVIDER=ollama` |
+
+## Answer Format
+
+For in-scope legal questions, the answer is prompted to use this structure:
+
+```text
+الإجابة المختصرة:
+...
+
+التفسير:
+...
+
+المراجع:
+- ...
+- ...
+
+تنبيه:
+هذا شرح أولي وليس استشارة قانونية.
+```
+
+For out-of-scope questions or weak evidence, the API should return an insufficient-evidence answer and empty citations:
+
+```json
+{
+  "answer": "لا تكفي قاعدة المعرفة الحالية للإجابة بثقة.",
+  "citations": [],
+  "confidence": 0.0,
+  "retrieved_chunks": [],
+  "disclaimer": "..."
+}
+```
+
+`retrieved_chunks` may still be present for debugging/evaluation if Weaviate returned chunks, but unrelated citations are not shown.
 
 ## Windows Prerequisites
 
 - Windows 10 or Windows 11.
 - Docker Desktop installed and running.
 - Docker Desktop using Linux containers / WSL2 backend.
-- Ollama for Windows installed.
 - Git installed.
-- `qwen3:4b` pulled in Ollama.
+- xAI API key for the recommended fast path.
+- Optional: Ollama for Windows and `qwen3:4b` if using local generation.
 
 ## Windows Setup With PowerShell
 
@@ -65,12 +130,13 @@ Create your local environment file:
 Copy-Item .env.example .env
 ```
 
-Install the local Ollama model:
+Edit `.env` and set your xAI key:
 
-```powershell
-ollama pull qwen3:4b
-ollama list
-curl.exe http://localhost:11434/api/tags
+```env
+LLM_PROVIDER=xai
+XAI_API_KEY=your_xai_api_key_here
+XAI_BASE_URL=https://api.x.ai/v1
+XAI_MODEL=grok-4.3
 ```
 
 Start the Docker stack:
@@ -93,10 +159,16 @@ Seed Weaviate:
 docker compose -p lawz-ai-jo exec api python -m api.seed_weaviate
 ```
 
-Ask a test question:
+Ask a legal test question:
 
 ```powershell
 curl.exe -X POST http://localhost:8001/rag/answer -H "Content-Type: application/json" -d "{\"question\":\"هل يجوز إنهاء عقد العمل بدون إشعار؟\",\"k\":5}"
+```
+
+Ask an out-of-scope test question:
+
+```powershell
+curl.exe -X POST http://localhost:8001/rag/answer -H "Content-Type: application/json" -d "{\"question\":\"ما هي أفضل طريقة لتعلم بايثون؟\",\"k\":5}"
 ```
 
 Open the app:
@@ -104,8 +176,6 @@ Open the app:
 ```text
 http://localhost:3001
 ```
-
-`qwen3:4b` can be slow on local machines. Some answers may take 2-4 minutes.
 
 ## Environment File
 
@@ -115,7 +185,7 @@ Start from:
 Copy-Item .env.example .env
 ```
 
-Default values:
+Recommended values:
 
 ```env
 WEAVIATE_URL=http://weaviate:8080
@@ -125,6 +195,18 @@ TOP_K=5
 RAG_PROMPT_TOP_N=3
 CHUNK_TEXT_LIMIT=900
 
+# LLM provider: "xai" for Grok API, "ollama" for local generation.
+LLM_PROVIDER=xai
+LLM_TIMEOUT_SECONDS=30
+LLM_TEMPERATURE=0.1
+LLM_MAX_TOKENS=650
+
+# xAI / Grok API
+XAI_API_KEY=your_xai_api_key_here
+XAI_BASE_URL=https://api.x.ai/v1
+XAI_MODEL=grok-4.3
+
+# Ollama local option
 OLLAMA_BASE_URL=http://host.docker.internal:11434
 OLLAMA_MODEL=qwen3:4b
 OLLAMA_TIMEOUT_SECONDS=120
@@ -137,47 +219,154 @@ WEB_ORIGIN=http://localhost:3001
 
 Do not commit `.env`.
 
-## If `/readyz` Says Ollama Is Not Ready
+## Switching To Ollama
 
-1. Check Ollama is reachable from Windows:
+Use this only if you want local generation instead of xAI:
 
-   ```powershell
-   curl.exe http://localhost:11434/api/tags
-   ```
+```env
+LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://host.docker.internal:11434
+OLLAMA_MODEL=qwen3:4b
+OLLAMA_TIMEOUT_SECONDS=120
+```
 
-2. Open the Ollama app from the Start Menu.
+Then make sure Ollama is running on the host:
 
-3. Check and pull the model:
+```powershell
+ollama pull qwen3:4b
+ollama list
+curl.exe http://localhost:11434/api/tags
+```
 
-   ```powershell
-   ollama list
-   ollama pull qwen3:4b
-   ```
+Local `qwen3:4b` can be slow. Some answers may take 2-4 minutes depending on the machine.
 
-4. Restart Docker Desktop.
+## Readiness
 
-5. Restart the stack:
+`/readyz` checks:
 
-   ```powershell
-   docker compose -p lawz-ai-jo down
-   docker compose -p lawz-ai-jo up -d --build
-   ```
+- Weaviate readiness.
+- The selected LLM provider configuration.
 
-6. Optional advanced local-development step: if the API container still cannot reach Ollama on Windows, create a user environment variable:
+For xAI, readiness does not call the generation API and does not spend tokens. It only checks that:
 
-   ```text
-   OLLAMA_HOST=0.0.0.0:11434
-   ```
+- `XAI_API_KEY` is configured.
+- `XAI_BASE_URL` is configured.
+- `XAI_MODEL` is configured.
 
-   Then quit Ollama from the taskbar and start it again from the Start Menu. Use this only for trusted local development.
+Check readiness:
+
+```powershell
+curl.exe http://localhost:8001/readyz
+```
+
+## API
+
+Main endpoint:
+
+```text
+POST /rag/answer
+```
+
+Request:
+
+```json
+{
+  "question": "هل يجوز إنهاء عقد العمل بدون إشعار؟",
+  "k": 5
+}
+```
+
+Response:
+
+```json
+{
+  "answer": "...",
+  "citations": [],
+  "confidence": 0.0,
+  "retrieved_chunks": [],
+  "disclaimer": "..."
+}
+```
+
+The response shape is stable for the web UI and evaluation script.
+
+## Web UI
+
+The web UI:
+
+- Uses RTL Arabic layout.
+- Preserves line breaks in generated answers.
+- Shows citations only when the backend returns them.
+- Shows a subtle no-citations message for insufficient evidence.
+- Keeps retrieved chunks available in a collapsed section.
+- Shows loading and error states.
+
+Open:
+
+```text
+http://localhost:3001
+```
+
+## Metrics
+
+Prometheus-style metrics are exposed at:
+
+```text
+http://localhost:8001/metrics/
+```
+
+Test from PowerShell:
+
+```powershell
+curl.exe -L http://localhost:8001/metrics
+```
+
+Useful metric names include:
+
+- `requests_total`
+- `request_latency_seconds`
+- `inflight_requests`
+- `rag_answers_total`
+- `rag_retrieved_chunks`
+- `rag_generation_errors_total`
+
+To see the counters move, call `/rag/answer` once, then check `/metrics` again.
+
+## Evaluation
+
+Run the smoke evaluation after the stack is running and Weaviate is seeded:
+
+```powershell
+python eval_rag_smoke.py --api-url http://localhost:8001 --timeout 300 --output outputs/rag_smoke_results.json
+```
+
+If Python cannot import `httpx` locally:
+
+```powershell
+python -m pip install httpx
+```
+
+The evaluation fixture is `data/rag_smoke.json`. The generated report is written under `outputs/`, which should not be committed.
+
+## Validation Commands
+
+Safe local validation commands:
+
+```bash
+python -m compileall -q api tests eval_rag_smoke.py
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q
+docker compose config --services
+```
+
+These commands do not run live xAI calls, do not start Docker containers, and do not seed Weaviate.
 
 ## Common Issues
 
+- xAI returns `401`: confirm `LLM_PROVIDER=xai`, `XAI_API_KEY` starts with `xai-`, and `XAI_BASE_URL=https://api.x.ai/v1`.
+- `/readyz` says LLM is not ready: check that `.env` has `XAI_API_KEY`, `XAI_BASE_URL`, and `XAI_MODEL`.
 - Port already in use: stop the other service using ports `3001`, `8001`, `8081`, or `11434`.
 - Docker Desktop not running: start Docker Desktop and wait until it is ready.
-- Ollama model missing: run `ollama pull qwen3:4b`.
-- First API call is slow: the embedding model and generator may warm up.
-- Smoke evaluation takes time: `qwen3:4b` may take 2-4 minutes per question.
+- Weaviate returns no useful answers: make sure seeding was run with `python -m api.seed_weaviate` inside the API container.
 - `/metrics` redirects to `/metrics/`: use `curl.exe -L http://localhost:8001/metrics` or open `http://localhost:8001/metrics/`.
 - `jq` may not be installed on Windows. It is optional.
 
@@ -195,22 +384,6 @@ Delete containers and the Weaviate volume:
 docker compose -p lawz-ai-jo down -v
 ```
 
-## Evaluation
-
-Run the smoke evaluation after the stack is running and Weaviate is seeded:
-
-```powershell
-python eval_rag_smoke.py --api-url http://localhost:8001 --timeout 300 --output outputs/rag_smoke_results.json
-```
-
-If Python cannot import `httpx` on Windows, install it locally:
-
-```powershell
-python -m pip install httpx
-```
-
-The evaluation fixture is `data/rag_smoke.json`. The generated report is written under `outputs/`, which should not be committed.
-
 ## GitHub Safety
 
 Do not commit local or generated files such as:
@@ -222,6 +395,8 @@ Do not commit local or generated files such as:
 - `outputs/`
 - `__pycache__/`
 - `.pytest_cache/`
+
+Never commit real API keys.
 
 ## More Documentation
 
