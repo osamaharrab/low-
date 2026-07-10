@@ -120,7 +120,12 @@ def embed_question(question: str, settings: Settings) -> list[float]:
     return encode_texts([text], settings.embedding_model)[0]
 
 
-def retrieve_chunks(question_vector: list[float], k: int, settings: Settings) -> list[dict[str, Any]]:
+def retrieve_chunks(
+    question: str,
+    question_vector: list[float],
+    k: int,
+    settings: Settings,
+) -> list[dict[str, Any]]:
     import weaviate
 
     client = weaviate.Client(url=settings.weaviate_url)
@@ -135,49 +140,265 @@ def retrieve_chunks(question_vector: list[float], k: int, settings: Settings) ->
         "jurisdiction",
     ]
 
-    result = (
+    # Retrieve more candidates than the number ultimately returned.
+    # Reranking cannot recover a relevant chunk that was never retrieved.
+    candidate_limit = max(30, k * 6)
+
+    vector_result = (
         client.query.get(settings.weaviate_class, properties)
         .with_near_vector({"vector": question_vector})
-        .with_limit(k)
+        .with_limit(candidate_limit)
         .with_additional(["distance"])
         .do()
     )
 
-    rows = result.get("data", {}).get("Get", {}).get(settings.weaviate_class, []) or []
-    chunks: list[dict[str, Any]] = []
-    for row in rows:
+    keyword_result = (
+        client.query.get(settings.weaviate_class, properties)
+        .with_bm25(
+            query=question,
+            properties=["topic", "reference", "source_name", "text"],
+        )
+        .with_limit(candidate_limit)
+        .do()
+    )
+
+    vector_rows = (
+        vector_result.get("data", {})
+        .get("Get", {})
+        .get(settings.weaviate_class, [])
+        or []
+    )
+    keyword_rows = (
+        keyword_result.get("data", {})
+        .get("Get", {})
+        .get(settings.weaviate_class, [])
+        or []
+    )
+
+    candidates: dict[str, dict[str, Any]] = {}
+
+    def get_candidate(row: dict[str, Any]) -> dict[str, Any] | None:
+        chunk_id = str(row.get("chunk_id") or "").strip()
+        if not chunk_id:
+            return None
+
+        candidate = candidates.get(chunk_id)
+        if candidate is None:
+            candidate = {key: row.get(key) for key in properties}
+            candidate["vector_score"] = 0.0
+            candidate["vector_rank"] = None
+            candidate["keyword_rank"] = None
+            candidates[chunk_id] = candidate
+
+        return candidate
+
+    for rank, row in enumerate(vector_rows, start=1):
+        candidate = get_candidate(row)
+        if candidate is None:
+            continue
+
         additional = row.get("_additional") or {}
         distance = additional.get("distance")
+
         try:
-            vector_score = max(0.0, 1.0 - float(distance)) if distance is not None else 0.0
+            vector_score = (
+                max(0.0, min(1.0, 1.0 - float(distance)))
+                if distance is not None
+                else 0.0
+            )
         except (TypeError, ValueError):
             vector_score = 0.0
 
-        chunk = {key: row.get(key) for key in properties}
-        chunk["vector_score"] = vector_score
-        chunks.append(chunk)
-    return chunks
+        candidate["vector_score"] = vector_score
+        candidate["vector_rank"] = rank
+
+    for rank, row in enumerate(keyword_rows, start=1):
+        candidate = get_candidate(row)
+        if candidate is None:
+            continue
+
+        candidate["keyword_rank"] = rank
+
+    # Reciprocal Rank Fusion combines vector and keyword rankings without
+    # depending on incomparable raw BM25 and vector score scales.
+    rrf_constant = 60
+
+    for candidate in candidates.values():
+        rrf_score = 0.0
+
+        vector_rank = candidate.get("vector_rank")
+        if vector_rank is not None:
+            rrf_score += 1.0 / (rrf_constant + int(vector_rank))
+
+        keyword_rank = candidate.get("keyword_rank")
+        if keyword_rank is not None:
+            rrf_score += 1.0 / (rrf_constant + int(keyword_rank))
+
+        candidate["rrf_score"] = rrf_score
+
+    return list(candidates.values())
 
 
-def rerank_chunks(question: str, chunks: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    question_tokens = tokenize_for_overlap(question)
+def normalize_rerank_token(token: str) -> str:
+    """Apply light Arabic normalization for retrieval ranking only."""
+    token = normalize_arabic_text(token)
+
+    if token.startswith("ال") and len(token) > 4:
+        token = token[2:]
+
+    # Light stemming for common plurals and possessive suffixes.
+    # Examples:
+    # التعريفات -> تعريف
+    # أشكاله -> اشكال
+    for suffix in (
+        "اته",
+        "اتها",
+        "هما",
+        "هم",
+        "هن",
+        "ها",
+        "ات",
+        "ون",
+        "ين",
+        "ان",
+        "ه",
+    ):
+        if token.endswith(suffix) and len(token) - len(suffix) >= 3:
+            token = token[:-len(suffix)]
+            break
+
+    return token
+
+
+def tokenize_for_rerank(text: str) -> set[str]:
+    normalized = normalize_arabic_text(text)
+    tokens: set[str] = set()
+
+    for token in TOKEN_RE.findall(normalized):
+        if len(token) <= 1 or token in STOPWORDS:
+            continue
+
+        normalized_token = normalize_rerank_token(token)
+        if len(normalized_token) > 1:
+            tokens.add(normalized_token)
+
+    return tokens
+
+
+def rerank_chunks(
+    question: str,
+    chunks: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    question_normalized = normalize_arabic_text(question)
+    question_tokens = tokenize_for_rerank(question)
+
+    definition_intent = any(
+        phrase in question_normalized
+        for phrase in (
+            "ما المقصود",
+            "ما معنى",
+            "ما تعريف",
+            "تعريف",
+            "ماذا يعني",
+        )
+    )
+
+    asks_for_forms = "شكل" in question_tokens
+    asks_for_types = "نوع" in question_tokens
+
+    max_rrf_score = max(
+        (float(chunk.get("rrf_score") or 0.0) for chunk in chunks),
+        default=0.0,
+    )
+
     reranked: list[dict[str, Any]] = []
+
     for chunk in chunks:
+        topic = str(chunk.get("topic") or "")
+        reference = str(chunk.get("reference") or "")
+        source_name = str(chunk.get("source_name") or "")
+        text = str(chunk.get("text") or "")
+
         searchable = " ".join(
             [
-                str(chunk.get("topic") or ""),
-                str(chunk.get("reference") or ""),
-                str(chunk.get("text") or ""),
+                topic,
+                reference,
+                source_name,
+                text,
             ]
         )
-        overlap_count = len(question_tokens & tokenize_for_overlap(searchable))
-        final_score = min(1.0, float(chunk.get("vector_score") or 0.0) + 0.05 * overlap_count)
+
+        searchable_tokens = tokenize_for_rerank(searchable)
+        topic_tokens = tokenize_for_rerank(topic)
+
+        overlap_count = len(question_tokens & searchable_tokens)
+        topic_overlap_count = len(question_tokens & topic_tokens)
+
+        lexical_score = (
+            overlap_count / len(question_tokens)
+            if question_tokens
+            else 0.0
+        )
+        lexical_score = min(1.0, lexical_score)
+
+        topic_score = (
+            topic_overlap_count / len(topic_tokens)
+            if topic_tokens
+            else 0.0
+        )
+        topic_score = min(1.0, topic_score)
+
+        intent_bonus = 0.0
+
+        # Definition questions should prioritize definition articles.
+        if definition_intent and "تعريف" in topic_tokens:
+            intent_bonus += 0.18
+
+        # List/form questions should prioritize articles whose topic
+        # explicitly contains the requested concept.
+        if asks_for_forms and "شكل" in topic_tokens:
+            intent_bonus += 0.14
+
+        if asks_for_types and "نوع" in topic_tokens:
+            intent_bonus += 0.12
+
+        rrf_score = float(chunk.get("rrf_score") or 0.0)
+        normalized_rrf = (
+            rrf_score / max_rrf_score
+            if max_rrf_score > 0.0
+            else 0.0
+        )
+
+        vector_score = float(chunk.get("vector_score") or 0.0)
+
+        final_score = (
+            0.42 * normalized_rrf
+            + 0.18 * vector_score
+            + 0.20 * lexical_score
+            + 0.20 * topic_score
+            + intent_bonus
+        )
+
         updated = dict(chunk)
-        updated["score"] = round(final_score, 4)
+        updated["score"] = round(
+            min(1.0, max(0.0, final_score)),
+            4,
+        )
         updated["overlap_count"] = overlap_count
+        updated["topic_overlap_count"] = topic_overlap_count
+        updated["intent_bonus"] = round(intent_bonus, 4)
         reranked.append(updated)
 
-    return sorted(reranked, key=lambda item: item["score"], reverse=True)
+    return sorted(
+        reranked,
+        key=lambda item: (
+            item["score"],
+            float(item.get("intent_bonus") or 0.0),
+            float(item.get("rrf_score") or 0.0),
+            float(item.get("vector_score") or 0.0),
+        ),
+        reverse=True,
+    )
 
 
 def truncate_text(text: str, limit: int) -> str:
@@ -274,7 +495,7 @@ def build_retrieved_preview(chunks: list[dict[str, Any]]) -> list[RetrievedChunk
 
 def answer_question(question: str, k: int, settings: Settings) -> RAGResponse:
     query_vector = embed_question(question, settings)
-    retrieved = retrieve_chunks(query_vector, k, settings)
+    retrieved = retrieve_chunks(question, query_vector, k, settings)
     reranked = rerank_chunks(question, retrieved)
 
     if not reranked:
@@ -294,7 +515,20 @@ def answer_question(question: str, k: int, settings: Settings) -> RAGResponse:
         raise
 
     answer = clean_llm_output(answer)
-    confidence = 0.0 if any(phrase in answer for phrase in INSUFFICIENT_PHRASES) else float(prompt_chunks[0].get("score") or 0.0)
+    if any(
+        phrase in answer for phrase in INSUFFICIENT_PHRASES
+    ):
+        confidence = 0.0
+    else:
+        top_scores = [
+            float(chunk.get("score") or 0.0)
+            for chunk in prompt_chunks[:2]
+        ]
+        confidence = (
+            sum(top_scores) / len(top_scores)
+            if top_scores
+            else 0.0
+        )
     confidence = round(min(1.0, max(0.0, confidence)), 3)
     insufficient = is_insufficient_answer(answer, confidence)
     if insufficient:
