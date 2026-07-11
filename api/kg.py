@@ -48,6 +48,7 @@ KG_RELATIONSHIP_PATTERNS = frozenset(
         ("Article", "RELATED_TO", "Article"),
     }
 )
+KG_LABEL_ORDER = ("Law", "Article", "Topic", "Regulation")
 
 TEXT2CYPHER_SYSTEM_PROMPT = """You generate Neo4j Cypher for a Jordanian legal knowledge graph.
 Return one read-only Cypher query only.
@@ -89,24 +90,59 @@ class KGExecutionError(RuntimeError):
     """Raised when Neo4j cannot execute an already validated KG query."""
 
 
+def _format_property_set(properties: frozenset[str]) -> str:
+    return ", ".join(sorted(properties))
+
+
 def build_schema_context() -> str:
     """Return the schema text used to bound Text2Cypher generation."""
-    # TODO(KG teammate): Replace this static context with the final course-aligned
-    # schema text once the legal KG seed data and naming are finalized.
-    return KG_SCHEMA.strip()
+    node_lines = [
+        f"- {label} {{{_format_property_set(KG_NODE_PROPERTIES[label])}}}"
+        for label in KG_LABEL_ORDER
+    ]
+    relationship_type_lines = [
+        f"- {rel_type}"
+        for rel_type in sorted(KG_RELATIONSHIP_TYPES)
+    ]
+    relationship_direction_lines = [
+        f"- (:{source})-[:{rel_type}]->(:{target})"
+        for source, rel_type, target in sorted(KG_RELATIONSHIP_PATTERNS)
+    ]
+    return "\n".join(
+        [
+            "Jordanian legal knowledge graph schema:",
+            "",
+            "Node labels and properties:",
+            *node_lines,
+            "",
+            "Relationship types:",
+            *relationship_type_lines,
+            "",
+            "Relationship directions:",
+            *relationship_direction_lines,
+        ]
+    )
 
 
 def build_cypher_prompt(question: str) -> str:
     """Build a schema-bounded Text2Cypher prompt for a natural-language question."""
-    # TODO(KG teammate): Tune examples and few-shot guidance after the graph data
-    # owner finalizes the Jordanian legal graph shape.
     return f"""Schema:
 {build_schema_context()}
 
-Question:
+Arabic question:
 {question.strip()}
 
-Return exactly one read-only Cypher query. No prose."""
+Instructions:
+- Return exactly one Neo4j Cypher query.
+- The query must be read-only and include RETURN.
+- Use only the labels, properties, relationship types, and relationship directions in the schema.
+- Do not invent exact property values that are not explicitly supplied in the schema context or user question.
+- For general questions about a law, traverse the Law node without adding an inferred exact name property filter.
+- When textual filtering is necessary, prefer an appropriate WHERE ... CONTAINS condition over invented exact equality.
+- When traversing relationships for a graph-oriented result, bind the relationship to a variable and return the relevant nodes and relationship variables, for example RETURN a, r, t.
+- Use parameters instead of literal limits where possible.
+- Use LIMIT $limit unless the query is clearly bounded by an exact id lookup or returns only an aggregate scalar.
+- Do not include Markdown fences, comments, explanation, legal answer text, or extra prose."""
 
 
 def generate_cypher(question: str, settings: Settings) -> str:
@@ -121,10 +157,9 @@ def generate_cypher(question: str, settings: Settings) -> str:
 
 def extract_cypher(text: str) -> str:
     """Extract a single Cypher query from model output."""
-    # TODO(KG teammate): Tighten extraction rules against the final prompt format.
     candidate = (text or "").strip()
     if not candidate:
-        return ""
+        raise UnsupportedCypherError("Cypher query is empty.")
 
     matches = list(FENCED_BLOCK_RE.finditer(candidate))
     if matches:
@@ -134,7 +169,22 @@ def extract_cypher(text: str) -> str:
         after = candidate[matches[0].end() :].strip()
         if before or after:
             raise UnsupportedCypherError("Model returned explanatory text around Cypher.")
-        return matches[0].group("body").strip()
+        candidate = matches[0].group("body").strip()
+        if not candidate:
+            raise UnsupportedCypherError("Cypher query is empty.")
+    elif "```" in candidate:
+        raise UnsupportedCypherError("Model returned malformed Cypher fences.")
+
+    semicolons = _semicolon_positions_outside_strings(candidate)
+    if len(semicolons) > 1:
+        raise UnsupportedCypherError("Multiple Cypher statements are not allowed.")
+    if semicolons and candidate[semicolons[0] + 1 :].strip():
+        raise UnsupportedCypherError("Multiple Cypher statements are not allowed.")
+
+    masked = _mask_string_literals(candidate)
+    normalized = re.sub(r"\s+", " ", masked).strip()
+    if not READ_ONLY_START_RE.match(normalized):
+        raise UnsupportedCypherError("Model output did not contain a read-only Cypher query.")
 
     return candidate
 
@@ -266,10 +316,33 @@ def _validate_cypher_schema(cypher: str) -> None:
             raise UnsupportedCypherError(f"Cypher uses unknown property: {property_name}")
 
 
+def _has_limit_clause(normalized: str) -> bool:
+    return bool(re.search(r"\bLIMIT\b", normalized))
+
+
+def _has_exact_id_lookup(cypher: str) -> bool:
+    return bool(
+        re.search(r"\{\s*id\s*:", cypher)
+        or re.search(rf"\b{IDENTIFIER_RE}\s*\.\s*id\s*=\s*(?:\$|['\"]|\d)", cypher)
+    )
+
+
+def _returns_only_aggregate_scalar(cypher: str) -> bool:
+    match = re.search(r"\bRETURN\b(?P<body>.*?)(?:\bORDER\s+BY\b|\bLIMIT\b|$)", cypher, flags=re.IGNORECASE | re.DOTALL)
+    if not match:
+        return False
+    return_items = [item.strip() for item in match.group("body").split(",") if item.strip()]
+    return bool(return_items) and all(re.match(r"^(count|sum|avg|min|max)\s*\(", item, flags=re.IGNORECASE) for item in return_items)
+
+
+def _validate_result_limit_policy(cypher: str, normalized: str) -> None:
+    if _has_limit_clause(normalized) or _has_exact_id_lookup(cypher) or _returns_only_aggregate_scalar(cypher):
+        return
+    raise UnsupportedCypherError("Cypher query must include LIMIT $limit unless it is clearly bounded.")
+
+
 def validate_read_only_cypher(cypher: str, max_chars: int) -> str:
     """Validate and return one read-only Cypher statement without a trailing semicolon."""
-    # TODO(KG teammate): Replace this conservative lexical validator with the final
-    # course-aligned Cypher safety validator if Module 10/11 provides a parser.
     if max_chars <= 0:
         raise UnsupportedCypherError("Maximum Cypher length must be positive.")
 
@@ -305,23 +378,25 @@ def validate_read_only_cypher(cypher: str, max_chars: int) -> str:
             raise UnsupportedCypherError("Cypher contains an unsupported write or admin clause.")
 
     _validate_cypher_schema(masked)
+    _validate_result_limit_policy(cleaned, normalized)
 
     return cleaned
 
 
 def execute_cypher(cypher: str, parameters: dict[str, Any], settings: Settings) -> list[dict[str, Any]]:
-    """Execute validated read-only Cypher against Neo4j and return raw record dictionaries."""
-    # TODO(KG teammate): Add richer retry/logging behavior if the course reference
-    # expects it. Keep validation outside this function so unsafe Cypher never runs.
+    """Execute validated read-only Cypher against Neo4j and return serialized record dictionaries."""
     try:
-        from neo4j import GraphDatabase, Query
+        from neo4j import READ_ACCESS, GraphDatabase, Query
 
         auth = (settings.neo4j_user, settings.neo4j_password)
         query = Query(cypher, timeout=settings.kg_timeout_seconds)
         with GraphDatabase.driver(settings.neo4j_uri, auth=auth) as driver:
-            with driver.session(database=settings.neo4j_database) as session:
+            with driver.session(database=settings.neo4j_database, default_access_mode=READ_ACCESS) as session:
                 result = session.run(query, parameters or {})
-                return [record.data() for record in result]
+                return [
+                    {str(key): serialize_neo4j_value(value) for key, value in record.items()}
+                    for record in result
+                ]
     except Exception as exc:  # pragma: no cover - exercised with monkeypatches/unit tests.
         raise KGExecutionError("Neo4j query execution failed.") from exc
 
@@ -334,6 +409,18 @@ def _element_id(value: Any) -> str:
     if legacy_id is not None:
         return str(legacy_id)
     return ""
+
+
+def _spatial_payload(value: Any) -> dict[str, Any]:
+    payload: dict[str, Any] = {"type": type(value).__name__}
+    srid = getattr(value, "srid", None)
+    if srid is not None:
+        payload["srid"] = srid
+    for name in ("x", "y", "z", "longitude", "latitude", "height"):
+        item = getattr(value, name, None)
+        if item is not None:
+            payload[name] = item
+    return payload
 
 
 def _node_payload(value: Any) -> dict[str, Any]:
@@ -364,12 +451,16 @@ def _relationship_payload(value: Any) -> dict[str, Any]:
 
 def serialize_neo4j_value(value: Any) -> Any:
     """Convert Neo4j values into JSON-safe Python values."""
-    # TODO(KG teammate): Extend this serializer if seed data introduces points,
-    # durations, vectors, or additional Neo4j temporal classes.
     if value is None or isinstance(value, (str, int, float, bool)):
         return value
     if isinstance(value, (datetime, date, time)):
         return value.isoformat()
+    if hasattr(value, "iso_format") and callable(getattr(value, "iso_format")):
+        return value.iso_format()
+    if hasattr(value, "isoformat") and callable(getattr(value, "isoformat")):
+        return value.isoformat()
+    if hasattr(value, "srid"):
+        return _spatial_payload(value)
 
     if hasattr(value, "nodes") and hasattr(value, "relationships"):
         return {
@@ -467,13 +558,10 @@ def build_kg_answer(question: str, records: list[dict[str, Any]]) -> str:
 
 def query_knowledge_graph(question: str, settings: Settings) -> KGResponse:
     """Run the Text2Cypher KG flow and return a typed API response."""
-    # TODO(KG teammate): Complete the final Text2Cypher orchestration once the KG
-    # data and evaluation fixture are populated. Keep validation before execution.
     generated_cypher = generate_cypher(question, settings)
     safe_cypher = validate_read_only_cypher(generated_cypher, settings.kg_max_cypher_chars)
     parameters = {"limit": settings.kg_query_limit}
-    raw_records = execute_cypher(safe_cypher, parameters, settings)
-    records = serialize_records(raw_records)
+    records = execute_cypher(safe_cypher, parameters, settings)
     nodes, relationships = extract_graph_elements(records)
 
     return KGResponse(
