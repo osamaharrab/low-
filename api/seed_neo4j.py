@@ -17,10 +17,15 @@ NODE_GROUPS = {
 ALLOWED_LABELS = set(NODE_GROUPS.values())
 ALLOWED_RELATIONSHIP_TYPES = {
     "HAS_ARTICLE",
-    "BELONGS_TO",
-    "RELATES_TO",
-    "IMPLEMENTS",
-    "REFERENCES",
+    "HAS_TOPIC",
+    "REFERS_TO",
+    "RELATED_TO",
+}
+ALLOWED_RELATIONSHIP_PATTERNS = {
+    ("Law", "HAS_ARTICLE", "Article"),
+    ("Article", "HAS_TOPIC", "Topic"),
+    ("Article", "REFERS_TO", "Article"),
+    ("Article", "RELATED_TO", "Article"),
 }
 
 
@@ -80,22 +85,38 @@ def relationship_value(row: dict[str, Any], *names: str) -> str:
     return ""
 
 
-def validate_relationship(row: dict[str, Any], index: int) -> dict[str, Any]:
-    rel_type = relationship_value(row, "type", "relationship_type").upper()
+def build_node_label_index(graph: dict[str, list[dict[str, Any]]]) -> dict[str, str]:
+    node_labels: dict[str, str] = {}
+    for group, label in NODE_GROUPS.items():
+        for index, row in enumerate(graph[group], start=1):
+            node_id = require_id(row, label, index)
+            if node_id in node_labels:
+                raise SystemExit(f"Duplicate node id across seed graph: {node_id}")
+            node_labels[node_id] = label
+    return node_labels
+
+
+def validate_relationship(row: dict[str, Any], index: int, node_labels: dict[str, str]) -> dict[str, Any]:
+    rel_type = relationship_value(row, "type", "relationship_type")
     if rel_type not in ALLOWED_RELATIONSHIP_TYPES:
         raise SystemExit(f"Relationship row {index} has unsupported type: {rel_type or '<missing>'}")
-
-    source_label = relationship_value(row, "source_label", "from_label")
-    target_label = relationship_value(row, "target_label", "to_label")
-    if source_label not in ALLOWED_LABELS:
-        raise SystemExit(f"Relationship row {index} has unsupported source_label: {source_label or '<missing>'}")
-    if target_label not in ALLOWED_LABELS:
-        raise SystemExit(f"Relationship row {index} has unsupported target_label: {target_label or '<missing>'}")
 
     source_id = relationship_value(row, "source_id", "from_id", "source")
     target_id = relationship_value(row, "target_id", "to_id", "target")
     if not source_id or not target_id:
-        raise SystemExit(f"Relationship row {index} must include source_id and target_id.")
+        raise SystemExit(f"Relationship row {index} must include source and target.")
+    if source_id not in node_labels:
+        raise SystemExit(f"Relationship row {index} has unknown source id: {source_id}")
+    if target_id not in node_labels:
+        raise SystemExit(f"Relationship row {index} has unknown target id: {target_id}")
+
+    source_label = node_labels[source_id]
+    target_label = node_labels[target_id]
+    if (source_label, rel_type, target_label) not in ALLOWED_RELATIONSHIP_PATTERNS:
+        raise SystemExit(
+            f"Relationship row {index} has unsupported pattern: "
+            f"(:{source_label})-[:{rel_type}]->(:{target_label})"
+        )
 
     properties = row.get("properties") or {}
     if not isinstance(properties, dict):
@@ -131,6 +152,7 @@ def main() -> None:
     settings = get_settings()
     graph = load_seed_graph()
     counts = {key: len(rows) for key, rows in graph.items()}
+    node_labels = build_node_label_index(graph)
 
     # TODO(KG data owner): Keep this seeder idempotent as new legal entities are
     # added. Do not add delete/recreate behavior for reviewed graph data.
@@ -146,7 +168,7 @@ def main() -> None:
                     session.execute_write(merge_node, label, row)
 
             for index, row in enumerate(graph["relationships"], start=1):
-                relationship = validate_relationship(row, index)
+                relationship = validate_relationship(row, index, node_labels)
                 session.execute_write(merge_relationship, relationship)
 
     print(f"database: {settings.neo4j_database}")

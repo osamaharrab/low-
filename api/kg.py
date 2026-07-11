@@ -15,23 +15,39 @@ KG_DISCLAIMER = "هذا شرح أولي مبني على رسم معرفي تجر
 KG_SCHEMA = """Jordanian legal knowledge graph schema:
 
 Node labels and properties:
-- Law {id, title, jurisdiction, year, status, source_name}
-- Article {id, number, title, text, reference, source_page}
-- Topic {id, name, description}
-- Regulation {id, title, jurisdiction, year, status, source_name}
+- Law {id, jurisdiction, name, number, source_type, year}
+- Article {id, jurisdiction, law_id, number, reference, source_name, source_type, summary, title}
+- Topic {description, id, name}
+- Regulation {}
 
 Relationship types:
 - (:Law)-[:HAS_ARTICLE]->(:Article)
-- (:Regulation)-[:HAS_ARTICLE]->(:Article)
-- (:Article)-[:BELONGS_TO]->(:Law)
-- (:Article)-[:RELATES_TO]->(:Topic)
-- (:Regulation)-[:IMPLEMENTS]->(:Law)
-- (:Article)-[:REFERENCES]->(:Article)
+- (:Article)-[:HAS_TOPIC]->(:Topic)
+- (:Article)-[:REFERS_TO]->(:Article)
+- (:Article)-[:RELATED_TO]->(:Article)
 
 Use only these labels, relationship types, and properties.
 Prefer MATCH patterns that bind Law, Article, Topic, and Regulation nodes.
 Always return useful node, relationship, and scalar fields for the answer.
 Use LIMIT $limit unless the query already returns a clearly bounded result."""
+
+KG_NODE_PROPERTIES = {
+    "Law": frozenset({"id", "jurisdiction", "name", "number", "source_type", "year"}),
+    "Article": frozenset(
+        {"id", "jurisdiction", "law_id", "number", "reference", "source_name", "source_type", "summary", "title"}
+    ),
+    "Topic": frozenset({"description", "id", "name"}),
+    "Regulation": frozenset(),
+}
+KG_RELATIONSHIP_TYPES = frozenset({"HAS_ARTICLE", "HAS_TOPIC", "REFERS_TO", "RELATED_TO"})
+KG_RELATIONSHIP_PATTERNS = frozenset(
+    {
+        ("Law", "HAS_ARTICLE", "Article"),
+        ("Article", "HAS_TOPIC", "Topic"),
+        ("Article", "REFERS_TO", "Article"),
+        ("Article", "RELATED_TO", "Article"),
+    }
+)
 
 TEXT2CYPHER_SYSTEM_PROMPT = """You generate Neo4j Cypher for a Jordanian legal knowledge graph.
 Return one read-only Cypher query only.
@@ -58,6 +74,11 @@ FORBIDDEN_PATTERNS = (
     r"\bREVOKE\b",
 )
 READ_ONLY_START_RE = re.compile(r"^(MATCH|OPTIONAL\s+MATCH|WHERE|RETURN|WITH|UNWIND)\b", flags=re.IGNORECASE)
+IDENTIFIER_RE = r"[A-Za-z_][A-Za-z0-9_]*"
+NODE_PATTERN_RE = re.compile(r"\((?P<body>[^()\[\]]*)\)")
+RELATIONSHIP_PATTERN_RE = re.compile(r"\[(?P<body>[^\[\]]*)\]")
+PROPERTY_ACCESS_RE = re.compile(rf"(?<![$\w])(?P<variable>{IDENTIFIER_RE})\.(?P<property>{IDENTIFIER_RE})")
+ALIAS_RE = re.compile(rf"\b(?P<source>{IDENTIFIER_RE})\s+AS\s+(?P<alias>{IDENTIFIER_RE})\b", flags=re.IGNORECASE)
 
 
 class UnsupportedCypherError(ValueError):
@@ -175,6 +196,76 @@ def _mask_string_literals(text: str) -> str:
     return "".join(chars)
 
 
+def _labels_from_node_body(body: str) -> list[str]:
+    before_properties = body.split("{", 1)[0]
+    return re.findall(rf":\s*({IDENTIFIER_RE})", before_properties)
+
+
+def _variable_from_node_body(body: str) -> str:
+    before_properties = body.split("{", 1)[0]
+    variable = before_properties.split(":", 1)[0].strip()
+    if re.fullmatch(IDENTIFIER_RE, variable):
+        return variable
+    return ""
+
+
+def _property_keys_from_node_body(body: str) -> list[str]:
+    match = re.search(r"\{(?P<properties>[^{}]*)\}", body)
+    if not match:
+        return []
+    return re.findall(rf"\b({IDENTIFIER_RE})\s*:", match.group("properties"))
+
+
+def _relationship_types_from_body(body: str) -> list[str]:
+    before_properties = body.split("{", 1)[0]
+    return re.findall(rf"(?::|\|)\s*:?\s*({IDENTIFIER_RE})", before_properties)
+
+
+def _validate_cypher_schema(cypher: str) -> None:
+    """Reject explicit labels, relationship types, and node properties outside the seed schema."""
+    variable_labels: dict[str, set[str]] = {}
+
+    for match in NODE_PATTERN_RE.finditer(cypher):
+        body = match.group("body")
+        labels = _labels_from_node_body(body)
+        for label in labels:
+            if label not in KG_NODE_PROPERTIES:
+                raise UnsupportedCypherError(f"Cypher uses unknown node label: {label}")
+
+        if not labels:
+            continue
+
+        allowed_properties = set().union(*(KG_NODE_PROPERTIES[label] for label in labels))
+        for property_name in _property_keys_from_node_body(body):
+            if property_name not in allowed_properties:
+                raise UnsupportedCypherError(f"Cypher uses unknown property: {property_name}")
+
+        variable = _variable_from_node_body(body)
+        if variable:
+            variable_labels.setdefault(variable, set()).update(labels)
+
+    for match in RELATIONSHIP_PATTERN_RE.finditer(cypher):
+        for rel_type in _relationship_types_from_body(match.group("body")):
+            if rel_type not in KG_RELATIONSHIP_TYPES:
+                raise UnsupportedCypherError(f"Cypher uses unknown relationship type: {rel_type}")
+
+    for _ in range(2):
+        for match in ALIAS_RE.finditer(cypher):
+            source = match.group("source")
+            alias = match.group("alias")
+            if source in variable_labels:
+                variable_labels.setdefault(alias, set()).update(variable_labels[source])
+
+    for match in PROPERTY_ACCESS_RE.finditer(cypher):
+        variable = match.group("variable")
+        if variable not in variable_labels:
+            continue
+        property_name = match.group("property")
+        allowed_properties = set().union(*(KG_NODE_PROPERTIES[label] for label in variable_labels[variable]))
+        if property_name not in allowed_properties:
+            raise UnsupportedCypherError(f"Cypher uses unknown property: {property_name}")
+
+
 def validate_read_only_cypher(cypher: str, max_chars: int) -> str:
     """Validate and return one read-only Cypher statement without a trailing semicolon."""
     # TODO(KG teammate): Replace this conservative lexical validator with the final
@@ -212,6 +303,8 @@ def validate_read_only_cypher(cypher: str, max_chars: int) -> str:
     for pattern in FORBIDDEN_PATTERNS:
         if re.search(pattern, normalized):
             raise UnsupportedCypherError("Cypher contains an unsupported write or admin clause.")
+
+    _validate_cypher_schema(masked)
 
     return cleaned
 

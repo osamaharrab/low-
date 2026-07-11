@@ -2,12 +2,56 @@ import pytest
 
 pytest.importorskip("fastapi")
 pytest.importorskip("pydantic")
+pytest.importorskip("pydantic_settings")
 
 from pydantic import ValidationError
 
 from api.generator import GeneratorError
-from api.kg import KGExecutionError, UnsupportedCypherError, extract_graph_elements, serialize_records, validate_read_only_cypher
+from api.kg import (
+    KG_NODE_PROPERTIES,
+    KG_RELATIONSHIP_PATTERNS,
+    KG_RELATIONSHIP_TYPES,
+    KG_SCHEMA,
+    KGExecutionError,
+    UnsupportedCypherError,
+    extract_graph_elements,
+    serialize_records,
+    validate_read_only_cypher,
+)
 from api.models import KGRequest, KGResponse
+from api.seed_neo4j import (
+    ALLOWED_RELATIONSHIP_PATTERNS,
+    ALLOWED_RELATIONSHIP_TYPES,
+    NODE_GROUPS,
+    build_node_label_index,
+    load_seed_graph,
+    validate_relationship,
+)
+
+
+def seed_node_properties():
+    graph = load_seed_graph()
+    properties = {}
+    for group, label in NODE_GROUPS.items():
+        keys = set()
+        for row in graph[group]:
+            keys.update(str(key) for key in row)
+        properties[label] = frozenset(keys)
+    return properties
+
+
+def seed_relationship_types():
+    graph = load_seed_graph()
+    return frozenset(str(row["type"]) for row in graph["relationships"])
+
+
+def seed_relationship_patterns():
+    graph = load_seed_graph()
+    node_labels = build_node_label_index(graph)
+    return frozenset(
+        (node_labels[str(row["source"])], str(row["type"]), node_labels[str(row["target"])])
+        for row in graph["relationships"]
+    )
 
 
 def test_kg_request_model_validation():
@@ -17,11 +61,74 @@ def test_kg_request_model_validation():
         KGRequest(question="x")
 
 
+def test_kg_schema_matches_seed_graph_labels_properties_and_relationships():
+    expected_properties = seed_node_properties()
+    expected_relationship_types = seed_relationship_types()
+    expected_relationship_patterns = seed_relationship_patterns()
+
+    assert KG_NODE_PROPERTIES == expected_properties
+    assert KG_RELATIONSHIP_TYPES == expected_relationship_types
+    assert KG_RELATIONSHIP_PATTERNS == expected_relationship_patterns
+
+    for label, properties in expected_properties.items():
+        property_list = ", ".join(sorted(properties))
+        assert f"- {label} {{{property_list}}}" in KG_SCHEMA
+
+    for source_label, rel_type, target_label in expected_relationship_patterns:
+        assert f"(:{source_label})-[:{rel_type}]->(:{target_label})" in KG_SCHEMA
+
+    for obsolete_name in (
+        "BELONGS_TO",
+        "RELATES_TO",
+        "REFERENCES",
+        "IMPLEMENTS",
+        "Article.text",
+        "Article.source_page",
+        "Law.title",
+        "Law.status",
+    ):
+        assert obsolete_name not in KG_SCHEMA
+
+
+def test_seed_relationship_ids_exist_and_directions_match_schema():
+    graph = load_seed_graph()
+    node_labels = build_node_label_index(graph)
+
+    for row in graph["relationships"]:
+        assert row["source"] in node_labels
+        assert row["target"] in node_labels
+
+    assert seed_relationship_patterns() == KG_RELATIONSHIP_PATTERNS
+    assert seed_relationship_patterns() == ALLOWED_RELATIONSHIP_PATTERNS
+
+
+def test_seed_relationship_validation_infers_labels_and_accepts_seed_types():
+    graph = load_seed_graph()
+    node_labels = build_node_label_index(graph)
+    accepted_types = set()
+
+    for index, row in enumerate(graph["relationships"], start=1):
+        assert "source_label" not in row
+        assert "target_label" not in row
+
+        relationship = validate_relationship(row, index, node_labels)
+
+        assert relationship["source_label"] == node_labels[row["source"]]
+        assert relationship["target_label"] == node_labels[row["target"]]
+        assert relationship["source_id"] == row["source"]
+        assert relationship["target_id"] == row["target"]
+        assert relationship["properties"] == row["properties"]
+        accepted_types.add(relationship["type"])
+
+    assert frozenset(accepted_types) == seed_relationship_types()
+    assert ALLOWED_RELATIONSHIP_TYPES == seed_relationship_types()
+
+
 def test_read_only_cypher_acceptance():
     cypher = """
-    MATCH (law:Law)-[:HAS_ARTICLE]->(article:Article)
-    WHERE article.number = $number
-    RETURN law, article
+    MATCH (law:Law)-[:HAS_ARTICLE]->(article:Article)-[:HAS_TOPIC]->(topic:Topic)
+    WHERE article.summary CONTAINS $term
+    RETURN law.name, article.title, article.summary, topic.name
     ORDER BY article.number
     LIMIT $limit;
     """
@@ -30,6 +137,21 @@ def test_read_only_cypher_acceptance():
 
     assert validated.startswith("MATCH")
     assert validated.endswith("LIMIT $limit")
+
+
+@pytest.mark.parametrize(
+    "cypher",
+    [
+        "MATCH (article:Article)-[:RELATES_TO]->(topic:Topic) RETURN article, topic",
+        "MATCH (article:Article)-[:REFERENCES]->(other:Article) RETURN article, other",
+        "MATCH (article:Article)-[:HAS_TOPIC]->(unknown:Concept) RETURN article, unknown",
+        "MATCH (article:Article) RETURN article.text LIMIT $limit",
+        "MATCH (law:Law) RETURN law.title LIMIT $limit",
+    ],
+)
+def test_schema_invalid_read_only_cypher_rejection(cypher):
+    with pytest.raises(UnsupportedCypherError):
+        validate_read_only_cypher(cypher, max_chars=4000)
 
 
 @pytest.mark.parametrize(
