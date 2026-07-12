@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-function CapabilityIcon({ type }) {
+export function CapabilityIcon({ type }) {
   if (type === "kg") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
