@@ -1,4 +1,15 @@
+import Head from "next/head";
+import Link from "next/link";
 import { useMemo, useState } from "react";
+
+import AppShell from "../components/AppShell";
+import EmptyState from "../components/EmptyState";
+import ErrorState from "../components/ErrorState";
+import LegalNotice from "../components/LegalNotice";
+import LoadingState from "../components/LoadingState";
+import PageHero from "../components/PageHero";
+import QueryComposer from "../components/QueryComposer";
+import StatusBadge from "../components/StatusBadge";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 
@@ -9,29 +20,35 @@ const sampleQuestions = [
 ];
 
 const RELATIONSHIP_LABELS = {
-  HAS_TOPIC: "مرتبطة بموضوع",
-  HAS_ARTICLE: "يحتوي على المادة",
-  REFERS_TO: "يشير إلى",
-  RELATED_TO: "مرتبط بـ",
+  HAS_TOPIC: "Related to topic",
+  HAS_ARTICLE: "Contains article",
+  REFERS_TO: "Refers to",
+  RELATED_TO: "Related to",
 };
 
 const PROPERTY_LABELS = {
-  id: "المعرف",
-  name: "الاسم",
-  number: "الرقم",
-  title: "العنوان",
-  summary: "الملخص",
-  reference: "المرجع",
-  description: "الوصف",
-  jurisdiction: "الاختصاص",
-  source_name: "المصدر",
-  source_type: "نوع المصدر",
-  law_id: "معرف القانون",
-  year: "السنة",
+  name: "Name",
+  number: "Number",
+  title: "Title",
+  summary: "Summary",
+  reference: "Reference",
+  description: "Description",
+  jurisdiction: "Jurisdiction",
+  source_name: "Source",
+  source_type: "Source type",
+  year: "Year",
 };
 
 const TECHNICAL_ANSWER_RE = /^أرجعت قاعدة المعرفة التجريبية\s+\d+\s+صف/;
 const SUMMARY_LIMIT = 320;
+const GENERIC_ERROR_MESSAGE = "Something went wrong while processing your request. Please try again.";
+const MALFORMED_RESPONSE_MESSAGE = "The knowledge graph returned an unexpected response. Please try again.";
+const SAFE_ERROR_MESSAGES = new Set([
+  GENERIC_ERROR_MESSAGE,
+  MALFORMED_RESPONSE_MESSAGE,
+  "The graph question could not be converted into a safe query. Try phrasing it differently.",
+  "The knowledge graph service is not available right now. Please try again later.",
+]);
 
 function safeObject(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
@@ -54,19 +71,27 @@ function toText(value) {
   return "";
 }
 
+function hasArabic(value) {
+  return /[\u0600-\u06FF]/.test(toText(value));
+}
+
+function contentDirection(value) {
+  return hasArabic(value) ? "rtl" : "auto";
+}
+
 function uniqueValues(values) {
   return [...new Set(values.map(toText).filter(Boolean))];
 }
 
-function formatArabicList(values) {
+function formatReadableList(values) {
   const items = uniqueValues(values);
   if (items.length <= 1) {
     return items[0] || "";
   }
   if (items.length === 2) {
-    return `${items[0]} و${items[1]}`;
+    return `${items[0]} and ${items[1]}`;
   }
-  return `${items.slice(0, -1).join("، ")}، و${items[items.length - 1]}`;
+  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
 }
 
 function getLabels(node) {
@@ -164,10 +189,10 @@ function sortArticles(nodes) {
 
 function propertyValueText(value) {
   if (Array.isArray(value)) {
-    return value.map(propertyValueText).filter(Boolean).join("، ");
+    return value.map(propertyValueText).filter(Boolean).join(", ");
   }
   if (value && typeof value === "object") {
-    return JSON.stringify(value);
+    return "";
   }
   return toText(value);
 }
@@ -176,72 +201,104 @@ function nodeReadableName(node) {
   const properties = getProperties(node);
   if (hasLabel(node, "Article")) {
     const number = toText(properties.number);
-    return number ? `المادة ${number}` : toText(properties.title) || toText(properties.id) || "مادة قانونية";
+    return number ? `Article ${number}` : toText(properties.title) || toText(properties.id) || "Legal article";
   }
   if (hasLabel(node, "Topic")) {
-    return toText(properties.name) || toText(properties.id) || "موضوع";
+    return toText(properties.name) || toText(properties.id) || "Topic";
   }
   if (hasLabel(node, "Law")) {
-    return toText(properties.name) || toText(properties.title) || toText(properties.number) || toText(properties.id) || "قانون";
+    return toText(properties.name) || toText(properties.title) || toText(properties.number) || toText(properties.id) || "Law";
   }
   return (
     toText(properties.name) ||
     toText(properties.title) ||
     toText(properties.number) ||
     toText(properties.id) ||
-    getLabels(node).join("، ") ||
-    "عقدة"
+    getLabels(node).join(", ") ||
+    "Graph node"
   );
 }
 
 function relationshipLabel(type) {
-  return RELATIONSHIP_LABELS[type] || type || "علاقة";
+  return RELATIONSHIP_LABELS[type] || type || "Relationship";
 }
 
 function endpointName(nodeMap, id) {
   const node = nodeMap.get(toText(id));
-  return node ? nodeReadableName(node) : "عقدة غير معروفة";
+  return node ? nodeReadableName(node) : "Unknown node";
+}
+
+function relationshipSortValue(relationship, nodeMap) {
+  const source = nodeMap.get(toText(relationship.source));
+  const target = nodeMap.get(toText(relationship.target));
+  const articleNode = [source, target].find((node) => hasLabel(node, "Article"));
+  return articleNode ? articleSortValue(articleNode) : Number.MAX_SAFE_INTEGER;
+}
+
+function sortRelationships(relationships, nodeMap) {
+  return [...relationships].sort((left, right) => {
+    const leftArticle = relationshipSortValue(left, nodeMap);
+    const rightArticle = relationshipSortValue(right, nodeMap);
+    if (leftArticle !== rightArticle) {
+      return leftArticle - rightArticle;
+    }
+    const leftLabel = `${endpointName(nodeMap, left.source)} ${relationshipLabel(left.type)} ${endpointName(nodeMap, left.target)}`;
+    const rightLabel = `${endpointName(nodeMap, right.source)} ${relationshipLabel(right.type)} ${endpointName(nodeMap, right.target)}`;
+    return leftLabel.localeCompare(rightLabel, "ar", { numeric: true });
+  });
 }
 
 function isTechnicalAnswer(answer) {
   return TECHNICAL_ANSWER_RE.test(toText(answer));
 }
 
-function buildResultSummary({ articles, topics, laws, rowCount }) {
+function plural(count, singular, pluralValue) {
+  return count === 1 ? singular : pluralValue;
+}
+
+function buildResultSummary({ articles, topics, laws, relationships, rowCount }) {
   const pieces = [];
 
   if (articles.length) {
     const numbers = uniqueValues(articles.map((node) => getProperties(node).number));
     if (numbers.length) {
-      pieces.push(`عثر الرسم المعرفي على ${articles.length} مواد مرتبطة بالسؤال: المواد ${formatArabicList(numbers)}.`);
+      pieces.push(
+        `The graph returned ${articles.length} related ${plural(articles.length, "article", "articles")}: ${formatReadableList(
+          numbers.map((number) => `Article ${number}`)
+        )}.`
+      );
     } else {
-      pieces.push(`عثر الرسم المعرفي على ${articles.length} مواد مرتبطة بالسؤال.`);
+      pieces.push(`The graph returned ${articles.length} related ${plural(articles.length, "article", "articles")}.`);
     }
   }
 
   if (topics.length) {
     const topicNames = uniqueValues(topics.map((node) => getProperties(node).name || getProperties(node).id));
     if (topicNames.length) {
-      pieces.push(`الموضوعات الظاهرة: ${formatArabicList(topicNames)}.`);
+      pieces.push(`Related topics: ${formatReadableList(topicNames)}.`);
     } else {
-      pieces.push(`ظهرت ${topics.length} موضوعات مرتبطة بالسؤال.`);
+      pieces.push(`The result includes ${topics.length} related ${plural(topics.length, "topic", "topics")}.`);
     }
   }
 
   if (!articles.length && laws.length) {
     const lawNames = uniqueValues(laws.map((node) => getProperties(node).name || getProperties(node).number || getProperties(node).id));
     if (lawNames.length) {
-      pieces.push(`القوانين الظاهرة: ${formatArabicList(lawNames)}.`);
+      pieces.push(`Related laws: ${formatReadableList(lawNames)}.`);
     } else {
-      pieces.push(`ظهرت ${laws.length} قوانين مرتبطة بالسؤال.`);
+      pieces.push(`The result includes ${laws.length} related ${plural(laws.length, "law", "laws")}.`);
     }
+  }
+
+  if (relationships.length) {
+    pieces.push(`It also returned ${relationships.length} ${plural(relationships.length, "relationship", "relationships")}.`);
   }
 
   if (pieces.length) {
     return pieces.join(" ");
   }
 
-  return `عثر الرسم المعرفي على ${rowCount} نتائج مرتبطة بالسؤال.`;
+  return `The knowledge graph returned ${rowCount} related ${plural(rowCount, "result", "results")}.`;
 }
 
 function normalizeKgResult(result) {
@@ -254,7 +311,7 @@ function normalizeKgResult(result) {
   collectGraphValues(records, nodeMap, relationshipMap);
 
   const nodes = [...nodeMap.values()];
-  const relationships = [...relationshipMap.values()];
+  const relationships = sortRelationships([...relationshipMap.values()], nodeMap);
   const articles = sortArticles(nodes.filter((node) => hasLabel(node, "Article")));
   const topics = nodes
     .filter((node) => hasLabel(node, "Topic"))
@@ -285,24 +342,36 @@ function normalizeKgResult(result) {
 
 function apiErrorMessage(response) {
   if (response.status === 400) {
-    return "تعذر تحويل السؤال إلى استعلام مناسب للرسم المعرفي. جرّب صياغة مختلفة.";
+    return "The graph question could not be converted into a safe query. Try phrasing it differently.";
   }
   if (response.status === 503) {
-    return "خدمة الرسم المعرفي غير متاحة حالياً. حاول مرة أخرى بعد قليل.";
+    return "The knowledge graph service is not available right now. Please try again later.";
   }
-  return "تعذر تنفيذ سؤال الرسم المعرفي.";
+  return GENERIC_ERROR_MESSAGE;
 }
 
 function JsonBlock({ value }) {
-  return <pre dir="ltr">{JSON.stringify(value, null, 2)}</pre>;
+  return (
+    <pre className="code-block" dir="ltr">
+      {JSON.stringify(value, null, 2)}
+    </pre>
+  );
+}
+
+function CodeBlock({ value }) {
+  return (
+    <pre className="code-block" dir="ltr">
+      {value || "Unavailable"}
+    </pre>
+  );
 }
 
 function RowCountBadge({ count }) {
-  return <span className="rowBadge">عدد الصفوف: {Number.isInteger(count) ? count : 0}</span>;
+  return <StatusBadge>{Number.isInteger(count) ? `${count} rows` : "0 rows"}</StatusBadge>;
 }
 
 function PropertyList({ properties, omit = [] }) {
-  const omitted = new Set(omit);
+  const omitted = new Set(["id", "law_id", ...omit]);
   const entries = Object.entries(safeObject(properties))
     .filter(([key, value]) => !omitted.has(key) && propertyValueText(value))
     .slice(0, 12);
@@ -312,13 +381,18 @@ function PropertyList({ properties, omit = [] }) {
   }
 
   return (
-    <dl className="propertyList">
-      {entries.map(([key, value]) => (
-        <div key={key}>
-          <dt>{PROPERTY_LABELS[key] || key}</dt>
-          <dd>{propertyValueText(value)}</dd>
-        </div>
-      ))}
+    <dl className="property-list">
+      {entries.map(([key, value]) => {
+        const text = propertyValueText(value);
+        return (
+          <div key={key}>
+            <dt>{PROPERTY_LABELS[key] || key}</dt>
+            <dd dir={contentDirection(text)} lang={hasArabic(text) ? "ar" : "en"}>
+              {text}
+            </dd>
+          </div>
+        );
+      })}
     </dl>
   );
 }
@@ -334,55 +408,94 @@ function ArticleCard({ node, expanded, onToggle }) {
   const visibleSummary = !isLongSummary || expanded ? summary : `${summary.slice(0, SUMMARY_LIMIT).trim()}...`;
 
   return (
-    <article className="articleCard">
-      <div className="articleHeader">
-        <span className="articleNumber">{number ? `المادة ${number}` : "مادة قانونية"}</span>
+    <article className="article-card">
+      <div className="article-card__header">
+        <span className="article-kicker">{number ? `Article ${number}` : "Article"}</span>
       </div>
-      {title && <h3>{title}</h3>}
-      {summary && <p className="articleSummary">{visibleSummary}</p>}
+      {title && (
+        <h3 dir={contentDirection(title)} lang={hasArabic(title) ? "ar" : "en"}>
+          {title}
+        </h3>
+      )}
+      {summary && (
+        <p className="article-summary" dir={contentDirection(visibleSummary)} lang={hasArabic(visibleSummary) ? "ar" : "en"}>
+          {visibleSummary}
+        </p>
+      )}
       {isLongSummary && (
-        <button className="textButton" type="button" onClick={onToggle} aria-expanded={expanded}>
-          {expanded ? "عرض أقل" : "عرض المزيد"}
+        <button className="text-button" type="button" onClick={onToggle} aria-expanded={expanded}>
+          {expanded ? "Show less" : "Show more"}
         </button>
       )}
       {reference && (
-        <div className="referenceBlock">
-          <strong>المرجع:</strong>
-          <p>{reference}</p>
+        <div className="reference-block">
+          <strong>Reference</strong>
+          <p dir={contentDirection(reference)} lang={hasArabic(reference) ? "ar" : "en"}>
+            {reference}
+          </p>
         </div>
       )}
-      {sourceName && <p className="sourceName">{sourceName}</p>}
+      {sourceName && (
+        <span className="source-name">
+          Source:{" "}
+          <span dir={contentDirection(sourceName)} lang={hasArabic(sourceName) ? "ar" : "en"}>
+            {sourceName}
+          </span>
+        </span>
+      )}
     </article>
   );
 }
 
 function TopicCard({ node }) {
   const properties = getProperties(node);
-  const name = toText(properties.name) || "موضوع";
+  const name = toText(properties.name) || "Topic";
   const description = toText(properties.description);
 
   return (
-    <article className="card">
-      <h3>{name}</h3>
-      {description && <p className="cardText">{description}</p>}
+    <article className="entity-card">
+      <div className="entity-card__header">
+        <span className="entity-kicker">Topic</span>
+      </div>
+      <h3 dir={contentDirection(name)} lang={hasArabic(name) ? "ar" : "en"}>
+        {name}
+      </h3>
+      {description && (
+        <p className="card-text" dir={contentDirection(description)} lang={hasArabic(description) ? "ar" : "en"}>
+          {description}
+        </p>
+      )}
     </article>
   );
 }
 
 function LawCard({ node }) {
   const properties = getProperties(node);
-  const name = toText(properties.name) || toText(properties.title) || "قانون";
+  const name = toText(properties.name) || toText(properties.title) || "Law";
   const number = toText(properties.number);
   const jurisdiction = toText(properties.jurisdiction);
   const sourceType = toText(properties.source_type);
 
   return (
-    <article className="card">
-      <h3>{name}</h3>
-      <div className="metaList">
-        {number && <span>الرقم: {number}</span>}
-        {jurisdiction && <span>الاختصاص: {jurisdiction}</span>}
-        {sourceType && <span>المصدر: {sourceType}</span>}
+    <article className="entity-card">
+      <div className="entity-card__header">
+        <span className="entity-kicker">Law</span>
+      </div>
+      <h3 dir={contentDirection(name)} lang={hasArabic(name) ? "ar" : "en"}>
+        {name}
+      </h3>
+      <div className="meta-list">
+        {number && <span className="meta-pill">Number: {number}</span>}
+        {jurisdiction && (
+          <span className="meta-pill" dir={contentDirection(jurisdiction)}>
+            Jurisdiction: {jurisdiction}
+          </span>
+        )}
+        {sourceType && (
+          <span className="meta-pill" dir={contentDirection(sourceType)}>
+            Source: {sourceType}
+          </span>
+        )}
       </div>
     </article>
   );
@@ -391,11 +504,17 @@ function LawCard({ node }) {
 function GenericNodeCard({ node }) {
   const labels = getLabels(node);
   const properties = getProperties(node);
+  const name = nodeReadableName(node);
 
   return (
-    <article className="card">
-      <h3>{nodeReadableName(node)}</h3>
-      {labels.length > 0 && <p className="nodeType">{labels.join("، ")}</p>}
+    <article className="entity-card">
+      <div className="entity-card__header">
+        <span className="entity-kicker">Related entity</span>
+      </div>
+      <h3 dir={contentDirection(name)} lang={hasArabic(name) ? "ar" : "en"}>
+        {name}
+      </h3>
+      {labels.length > 0 && <p className="node-type">{labels.join(", ")}</p>}
       <PropertyList properties={properties} />
     </article>
   );
@@ -403,20 +522,29 @@ function GenericNodeCard({ node }) {
 
 function RelationshipCard({ relationship, nodeMap }) {
   const properties = safeObject(relationship.properties);
-  const hasProperties = Object.keys(properties).length > 0;
   const source = endpointName(nodeMap, relationship.source);
   const target = endpointName(nodeMap, relationship.target);
 
   return (
-    <article className="relationshipCard">
-      <p className="relationshipLine">
-        <strong>{source}</strong>
-        <span>→</span>
-        <span>{relationshipLabel(relationship.type)}</span>
-        <span>→</span>
-        <strong>{target}</strong>
+    <article className="relationship-card">
+      <p className="relationship-line" dir="ltr">
+        <strong className="entity-name" dir={contentDirection(source)} lang={hasArabic(source) ? "ar" : "en"}>
+          {source}
+        </strong>
+        <span className="relationship-arrow" aria-hidden="true">
+          →
+        </span>
+        <span className="relationship-label">{relationshipLabel(relationship.type)}</span>
+        <span className="relationship-arrow" aria-hidden="true">
+          →
+        </span>
+        <strong className="entity-name" dir={contentDirection(target)} lang={hasArabic(target) ? "ar" : "en"}>
+          {target}
+        </strong>
       </p>
-      {hasProperties && <PropertyList properties={properties} />}
+      <div className="relationship-properties">
+        <PropertyList properties={properties} />
+      </div>
     </article>
   );
 }
@@ -433,6 +561,7 @@ export default function KGPage() {
   const hasUsefulResults = Boolean(result) && kg.rowCount > 0 && usefulNodeCount > 0;
   const summaryText = hasUsefulResults ? buildResultSummary(kg) : "";
   const shouldShowBackendAnswer = Boolean(kg.answerText && !isTechnicalAnswer(kg.answerText) && kg.answerText !== summaryText);
+  const canRetry = question.trim().length >= 2 && !loading;
 
   function toggleArticle(articleKey) {
     setExpandedArticles((current) => {
@@ -446,8 +575,7 @@ export default function KGPage() {
     });
   }
 
-  async function askQuestion(event) {
-    event.preventDefault();
+  async function submitQuestion() {
     const trimmedQuestion = question.trim();
     if (loading || trimmedQuestion.length < 2) {
       return;
@@ -474,94 +602,86 @@ export default function KGPage() {
         throw new Error(apiErrorMessage(response));
       }
       if (!data || typeof data !== "object" || Array.isArray(data)) {
-        throw new Error("وصلت استجابة غير مفهومة من الخدمة.");
+        throw new Error(MALFORMED_RESPONSE_MESSAGE);
       }
       setResult(data);
     } catch (err) {
-      setError(err.message || "تعذر الاتصال بالخدمة.");
+      if (SAFE_ERROR_MESSAGES.has(err.message)) {
+        setError(err.message);
+      } else {
+        setError(GENERIC_ERROR_MESSAGE);
+      }
     } finally {
       setLoading(false);
     }
   }
 
+  function askQuestion(event) {
+    event.preventDefault();
+    submitQuestion();
+  }
+
   return (
-    <main dir="rtl" lang="ar">
-      <section className="shell">
-        <header>
-          <a className="navLink" href="/">
-            العودة إلى صفحة RAG
-          </a>
-          <p className="eyebrow">رسم معرفي تجريبي</p>
-          <h1>Lawz AI JO KG</h1>
-          <p className="subtitle">
-            واجهة مستقلة لسؤال الرسم المعرفي القانوني الأردني عبر Text2Cypher وNeo4j.
-          </p>
-        </header>
+    <AppShell>
+      <Head>
+        <title>Knowledge Graph | Lawz AI JO</title>
+        <meta name="description" content="Explore Jordanian labour-law relationships through the Lawz AI JO legal knowledge graph." />
+      </Head>
 
-        <form onSubmit={askQuestion} className="askBox">
-          <label htmlFor="question">السؤال</label>
-          <textarea
-            id="question"
-            value={question}
-            onChange={(event) => setQuestion(event.target.value)}
-            onKeyDown={(event) => {
-              if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
-                event.currentTarget.form?.requestSubmit();
-              }
-            }}
-            rows={5}
-            placeholder="اكتب سؤالك بالعربية..."
-            aria-describedby="kg-help"
-          />
-          <p id="kg-help" className="srOnly">
-            اكتب سؤالاً قانونياً بالعربية ثم اضغط زر السؤال أو مفتاح الإدخال مع التحكم حسب جهازك.
-          </p>
-          <div className="actions">
-            <button type="submit" disabled={loading || question.trim().length < 2}>
-              {loading ? "جارٍ الاستعلام..." : "اسأل الرسم المعرفي"}
-            </button>
-          </div>
-        </form>
+      <div className="page-container">
+        <PageHero
+          eyebrow="Knowledge Graph Explorer"
+          title="Explore Legal Relationships"
+          description="Explore connections between laws, articles, and legal topics through the knowledge graph."
+          badge="Neo4j · Text2Cypher"
+        >
+          <Link href="/rag" className="button button--secondary">
+            Open Legal Assistant
+          </Link>
+        </PageHero>
 
-        <div className="samples" aria-label="أسئلة مقترحة">
-          {sampleQuestions.map((sample) => (
-            <button key={sample} type="button" onClick={() => setQuestion(sample)} disabled={loading}>
-              {sample}
-            </button>
-          ))}
-        </div>
+        <QueryComposer
+          id="kg-question"
+          value={question}
+          onChange={setQuestion}
+          onSubmit={askQuestion}
+          label="Knowledge Graph question"
+          placeholder="Enter a legal relationship question in Arabic..."
+          helperText="For best results, ask the graph-oriented legal question in Arabic."
+          submitLabel="Explore the Knowledge Graph"
+          loadingLabel="Querying..."
+          loading={loading}
+          suggestions={sampleQuestions}
+          onSuggestionSelect={setQuestion}
+        />
 
-        {error && (
-          <p className="error" role="alert">
-            {error}
-          </p>
-        )}
-        {loading && (
-          <p className="loading" aria-live="polite">
-            جارٍ الاستعلام من الرسم المعرفي...
-          </p>
-        )}
+        {error && <ErrorState message={error} onRetry={canRetry ? submitQuestion : undefined} />}
+        {loading && <LoadingState message="Querying the knowledge graph..." />}
 
         {result && (
-          <section className="result" aria-live="polite">
+          <section className="results-stack" aria-live="polite">
             {hasUsefulResults ? (
               <>
-                <div className="answer panel">
-                  <div className="panelHeader">
-                    <h2>ملخص النتيجة</h2>
+                <article className="result-card result-card--soft">
+                  <div className="result-card__header">
+                    <h2>Result Summary</h2>
                     <RowCountBadge count={kg.rowCount} />
                   </div>
-                  <p className="answerText">{summaryText}</p>
-                  {shouldShowBackendAnswer && <p className="backendAnswer">{kg.answerText}</p>}
-                </div>
+                  <p className="answer-copy">{summaryText}</p>
+                  {shouldShowBackendAnswer && (
+                    <p className="backend-answer legal-content" dir={contentDirection(kg.answerText)} lang={hasArabic(kg.answerText) ? "ar" : "en"}>
+                      {kg.answerText}
+                    </p>
+                  )}
+                </article>
 
                 {kg.articles.length > 0 && (
-                  <section className="panel">
-                    <div className="panelHeader">
-                      <h2>المواد القانونية</h2>
-                      <span className="sectionCount">{kg.articles.length}</span>
+                  <section className="result-card">
+                    <div className="result-card__header">
+                      <h2>Legal Articles</h2>
+                      <StatusBadge>{kg.articles.length}</StatusBadge>
                     </div>
-                    <div className="articleGrid">
+                    <div className="article-grid">
                       {kg.articles.map((node, index) => {
                         const articleKey = node.id || `${nodeReadableName(node)}-${index}`;
                         return (
@@ -578,9 +698,12 @@ export default function KGPage() {
                 )}
 
                 {(kg.topics.length > 0 || kg.laws.length > 0 || kg.otherNodes.length > 0) && (
-                  <section className="panel">
-                    <h2>العناصر المرتبطة</h2>
-                    <div className="cards">
+                  <section className="result-card">
+                    <div className="result-card__header">
+                      <h2>Related Entities</h2>
+                      <StatusBadge>{kg.topics.length + kg.laws.length + kg.otherNodes.length}</StatusBadge>
+                    </div>
+                    <div className="entity-grid">
                       {kg.topics.map((node) => (
                         <TopicCard key={node.id} node={node} />
                       ))}
@@ -595,12 +718,12 @@ export default function KGPage() {
                 )}
 
                 {kg.relationships.length > 0 && (
-                  <section className="panel">
-                    <div className="panelHeader">
-                      <h2>العلاقات</h2>
-                      <span className="sectionCount">{kg.relationships.length}</span>
+                  <section className="result-card">
+                    <div className="result-card__header">
+                      <h2>Relationships</h2>
+                      <StatusBadge>{kg.relationships.length}</StatusBadge>
                     </div>
-                    <div className="relationships">
+                    <div className="relationship-grid">
                       {kg.relationships.map((relationship) => (
                         <RelationshipCard key={relationship.id} relationship={relationship} nodeMap={kg.nodeMap} />
                       ))}
@@ -609,412 +732,46 @@ export default function KGPage() {
                 )}
               </>
             ) : (
-              <div className="emptyState panel">
-                <div className="panelHeader">
-                  <h2>لا توجد نتائج واضحة</h2>
-                  <RowCountBadge count={kg.rowCount} />
-                </div>
-                <p>لم يعثر الرسم المعرفي على نتائج مرتبطة بالسؤال. جرّب صياغة السؤال بطريقة مختلفة.</p>
-              </div>
+              <EmptyState
+                title="No related results"
+                message="No related results were found in the knowledge graph. Try phrasing the question differently."
+              >
+                <RowCountBadge count={kg.rowCount} />
+              </EmptyState>
             )}
 
-            <details className="details">
-              <summary>تفاصيل الاستعلام والسجلات</summary>
-              <div className="detailGrid">
-                <section>
+            <details className="details-panel">
+              <summary>Query and Record Details</summary>
+              <div className="details-panel__content">
+                <section className="details-panel__section">
                   <h3>Generated Cypher</h3>
-                  <pre dir="ltr">{kg.generatedCypher || "غير متاح"}</pre>
+                  <CodeBlock value={kg.generatedCypher} />
                 </section>
-                <section>
-                  <h3>Query parameters</h3>
+                <section className="details-panel__section">
+                  <h3>Query Parameters</h3>
                   <JsonBlock value={kg.parameters} />
                 </section>
-                <section>
-                  <h3>Raw records</h3>
+                <section className="details-panel__section">
+                  <h3>Raw Records</h3>
                   <JsonBlock value={kg.records} />
                 </section>
-                <section>
-                  <h3>Raw nodes</h3>
+                <section className="details-panel__section">
+                  <h3>Raw Nodes</h3>
                   <JsonBlock value={kg.nodes} />
                 </section>
-                <section>
-                  <h3>Raw relationships</h3>
+                <section className="details-panel__section">
+                  <h3>Raw Relationships</h3>
                   <JsonBlock value={kg.relationships} />
                 </section>
               </div>
             </details>
 
-            {kg.disclaimer && <p className="disclaimer">{kg.disclaimer}</p>}
+            {kg.disclaimer && <LegalNotice disclaimer={kg.disclaimer} />}
           </section>
         )}
-      </section>
 
-      <style jsx global>{`
-        * {
-          box-sizing: border-box;
-        }
-        body {
-          margin: 0;
-          background: #f6f7f8;
-          color: #17202a;
-          font-family: Arial, "Tahoma", sans-serif;
-        }
-        main {
-          min-height: 100vh;
-          padding: 32px 16px;
-        }
-        .shell {
-          width: min(980px, 100%);
-          margin: 0 auto;
-        }
-        header {
-          margin-bottom: 24px;
-        }
-        .navLink {
-          display: inline-block;
-          margin-bottom: 14px;
-          color: #315948;
-          font-weight: 700;
-          text-decoration: none;
-        }
-        .navLink:hover {
-          text-decoration: underline;
-        }
-        .eyebrow {
-          margin: 0 0 8px;
-          color: #54705f;
-          font-size: 14px;
-          font-weight: 700;
-        }
-        h1 {
-          margin: 0;
-          font-size: 40px;
-          letter-spacing: 0;
-        }
-        h2 {
-          margin: 0;
-          font-size: 20px;
-        }
-        h3 {
-          margin: 0;
-          font-size: 17px;
-          line-height: 1.7;
-        }
-        .subtitle {
-          max-width: 760px;
-          margin: 12px 0 0;
-          line-height: 1.8;
-          color: #45515d;
-        }
-        .askBox {
-          background: #ffffff;
-          border: 1px solid #dfe5e8;
-          border-radius: 8px;
-          padding: 20px;
-        }
-        label {
-          display: block;
-          margin-bottom: 8px;
-          font-weight: 700;
-        }
-        textarea {
-          width: 100%;
-          resize: vertical;
-          border: 1px solid #cfd8dc;
-          border-radius: 6px;
-          padding: 12px;
-          font: inherit;
-          line-height: 1.7;
-          background: #fbfcfc;
-        }
-        textarea:focus {
-          outline: 2px solid #8fb8a2;
-          border-color: #54705f;
-        }
-        .actions {
-          display: flex;
-          justify-content: flex-start;
-          margin-top: 12px;
-        }
-        button {
-          border: 1px solid #8ca69a;
-          border-radius: 6px;
-          background: #ffffff;
-          color: #17202a;
-          padding: 10px 14px;
-          font: inherit;
-          cursor: pointer;
-        }
-        button:focus-visible,
-        .details summary:focus-visible,
-        .navLink:focus-visible {
-          outline: 2px solid #8fb8a2;
-          outline-offset: 2px;
-        }
-        .actions button {
-          background: #315948;
-          border-color: #315948;
-          color: #ffffff;
-          min-width: 150px;
-        }
-        button:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-        .samples {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin: 14px 0 22px;
-        }
-        .error {
-          border: 1px solid #e6a4a4;
-          background: #fff3f3;
-          color: #8a1f1f;
-          border-radius: 6px;
-          padding: 12px;
-        }
-        .loading {
-          border: 1px solid #d6e3dd;
-          background: #f3f8f5;
-          color: #315948;
-          border-radius: 6px;
-          padding: 12px;
-          line-height: 1.7;
-        }
-        .result {
-          display: grid;
-          gap: 16px;
-        }
-        .panel {
-          border: 1px solid #e4e9eb;
-          border-radius: 8px;
-          padding: 16px;
-          background: #fbfcfc;
-        }
-        .panelHeader {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          margin-bottom: 12px;
-        }
-        .rowBadge,
-        .sectionCount {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 28px;
-          border: 1px solid #d6e3dd;
-          border-radius: 999px;
-          background: #f3f8f5;
-          color: #315948;
-          padding: 4px 10px;
-          font-size: 13px;
-          font-weight: 700;
-          white-space: nowrap;
-        }
-        .articleGrid,
-        .cards,
-        .relationships {
-          display: grid;
-          gap: 10px;
-        }
-        .articleCard,
-        .card,
-        .relationshipCard {
-          border: 1px solid #e4e9eb;
-          border-radius: 8px;
-          padding: 14px;
-          background: #ffffff;
-          min-width: 0;
-        }
-        .articleHeader {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 10px;
-          margin-bottom: 8px;
-        }
-        .articleNumber {
-          color: #315948;
-          font-weight: 700;
-        }
-        .articleSummary,
-        .cardText,
-        .answer p,
-        .emptyState p,
-        .disclaimer {
-          line-height: 1.8;
-        }
-        .articleSummary,
-        .cardText {
-          margin: 10px 0 0;
-          color: #24313c;
-          overflow-wrap: anywhere;
-        }
-        .answerText {
-          white-space: pre-line;
-          margin: 0;
-          color: #24313c;
-        }
-        .backendAnswer {
-          margin: 12px 0 0;
-          color: #586772;
-        }
-        .textButton {
-          margin-top: 8px;
-          padding: 0;
-          border: 0;
-          background: transparent;
-          color: #315948;
-          font-weight: 700;
-        }
-        .referenceBlock {
-          margin-top: 12px;
-          border-top: 1px solid #eef2f3;
-          padding-top: 10px;
-        }
-        .referenceBlock strong {
-          color: #17202a;
-        }
-        .referenceBlock p {
-          margin: 6px 0 0;
-          color: #45515d;
-          line-height: 1.7;
-          overflow-wrap: anywhere;
-        }
-        .sourceName,
-        .nodeType {
-          margin: 10px 0 0;
-          color: #586772;
-          font-size: 14px;
-          line-height: 1.6;
-        }
-        .metaList {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin-top: 10px;
-          color: #586772;
-          font-size: 14px;
-        }
-        .metaList span {
-          border: 1px solid #e4e9eb;
-          border-radius: 999px;
-          padding: 4px 10px;
-          background: #fbfcfc;
-        }
-        .relationshipLine {
-          margin: 0;
-          color: #24313c;
-          line-height: 1.8;
-          overflow-wrap: anywhere;
-        }
-        .relationshipLine span,
-        .relationshipLine strong {
-          margin-inline-end: 6px;
-        }
-        .propertyList {
-          display: grid;
-          gap: 8px;
-          margin: 12px 0 0;
-        }
-        .propertyList div {
-          display: grid;
-          grid-template-columns: minmax(90px, 0.3fr) minmax(0, 1fr);
-          gap: 10px;
-        }
-        .propertyList dt {
-          color: #54705f;
-          font-weight: 700;
-        }
-        .propertyList dd {
-          margin: 0;
-          color: #24313c;
-          line-height: 1.7;
-          overflow-wrap: anywhere;
-        }
-        .emptyState p {
-          margin: 0;
-          color: #586772;
-        }
-        .details {
-          border: 1px solid #e4e9eb;
-          border-radius: 8px;
-          padding: 12px 14px;
-          background: #ffffff;
-        }
-        .details summary {
-          cursor: pointer;
-          font-weight: 700;
-          color: #315948;
-        }
-        .detailGrid {
-          display: grid;
-          gap: 14px;
-          margin-top: 12px;
-        }
-        .detailGrid section {
-          min-width: 0;
-        }
-        .detailGrid h3 {
-          margin-bottom: 8px;
-          font-size: 15px;
-          color: #17202a;
-        }
-        pre {
-          margin: 8px 0 0;
-          max-width: 100%;
-          overflow: auto;
-          border: 1px solid #e4e9eb;
-          border-radius: 6px;
-          background: #f6f7f8;
-          color: #24313c;
-          padding: 10px;
-          font-size: 13px;
-          line-height: 1.5;
-          text-align: left;
-          white-space: pre-wrap;
-          overflow-wrap: anywhere;
-        }
-        .disclaimer {
-          margin: 0;
-          border-top: 1px solid #e4e9eb;
-          padding-top: 16px;
-          color: #6b4b18;
-        }
-        .srOnly {
-          position: absolute;
-          width: 1px;
-          height: 1px;
-          padding: 0;
-          margin: -1px;
-          overflow: hidden;
-          clip: rect(0, 0, 0, 0);
-          white-space: nowrap;
-          border: 0;
-        }
-        @media (max-width: 640px) {
-          main {
-            padding: 20px 12px;
-          }
-          h1 {
-            font-size: 32px;
-          }
-          .askBox {
-            padding: 16px;
-          }
-          .panelHeader {
-            align-items: flex-start;
-            flex-direction: column;
-          }
-          .propertyList div {
-            grid-template-columns: 1fr;
-            gap: 4px;
-          }
-        }
-      `}</style>
-    </main>
+        {(!result || !kg.disclaimer) && <LegalNotice />}
+      </div>
+    </AppShell>
   );
 }
