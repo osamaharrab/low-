@@ -11,7 +11,17 @@
       2024
     ],
     "human_review_rows": 151,
-    "weighted_reviewed_outputs": 200
+    "weighted_reviewed_outputs": 200,
+    "primary_metric": "human-reviewed overall correctness",
+    "multi_seed_reporting": {
+      "seeds": [
+        42,
+        1337,
+        2024
+      ],
+      "stddev_method": "population standard deviation",
+      "baseline": "single deterministic result"
+    }
   },
   "fast": {
     "baseline": {
@@ -279,5 +289,259 @@
       "abstention_correct": "0",
       "review_notes": "Empty system output with no citations or retrieved evidence. Treat as a technical/API collection failure, not hallucination."
     }
-  ]
+  ],
+  "multi_seed_stability": {
+    "methodology": {
+      "seeds": [
+        42,
+        1337,
+        2024
+      ],
+      "number_of_seeded_runs": 3,
+      "primary_metric": "human-reviewed overall correctness",
+      "baseline_treatment": "The BM25 baseline is deterministic and is reported as a single result.",
+      "stddev_method": "Population standard deviation across the three seeded RAG runs, dividing variance by the number of seeds, matching Module 12."
+    },
+    "baseline": {
+      "overall_correctness": 32.0,
+      "legal_correctness": 40.0,
+      "evidence_supported": 100.0,
+      "citation_relevance": 50.0,
+      "abstention_accuracy": 0.0,
+      "material_hallucination_rate": 0.0,
+      "automated_retrieval_hit": 45.0,
+      "automated_reference_hit": 45.0,
+      "automated_citation_validity": 100.0,
+      "false_abstention_rate": 0.0,
+      "automated_correct_abstention": 0.0,
+      "request_success_rate": 100.0,
+      "request_error_rate": 0.0,
+      "timeout_rate": 0.0,
+      "average_latency_ms": 2.4187999999999996,
+      "p95_latency_ms": 3.06
+    },
+    "per_seed": {
+      "42": {
+        "overall_correctness": 52.0,
+        "legal_correctness": 40.0,
+        "evidence_supported": 65.0,
+        "citation_relevance": 12.5,
+        "abstention_accuracy": 100.0,
+        "material_hallucination_rate": 0.0,
+        "automated_retrieval_hit": 70.0,
+        "automated_reference_hit": 72.5,
+        "automated_citation_validity": 100.0,
+        "false_abstention_rate": 35.0,
+        "automated_correct_abstention": 100.0,
+        "request_success_rate": 100.0,
+        "request_error_rate": 0.0,
+        "timeout_rate": 0.0,
+        "average_latency_ms": 5657.955200000001,
+        "p95_latency_ms": 7643.26
+      },
+      "1337": {
+        "overall_correctness": 50.0,
+        "legal_correctness": 37.5,
+        "evidence_supported": 65.0,
+        "citation_relevance": 12.5,
+        "abstention_accuracy": 100.0,
+        "material_hallucination_rate": 0.0,
+        "automated_retrieval_hit": 70.0,
+        "automated_reference_hit": 72.5,
+        "automated_citation_validity": 100.0,
+        "false_abstention_rate": 32.5,
+        "automated_correct_abstention": 100.0,
+        "request_success_rate": 98.0,
+        "request_error_rate": 2.0,
+        "timeout_rate": 2.0,
+        "average_latency_ms": 6500.169600000002,
+        "p95_latency_ms": 9111.99
+      },
+      "2024": {
+        "overall_correctness": 54.0,
+        "legal_correctness": 42.5,
+        "evidence_supported": 65.0,
+        "citation_relevance": 12.5,
+        "abstention_accuracy": 100.0,
+        "material_hallucination_rate": 0.0,
+        "automated_retrieval_hit": 70.0,
+        "automated_reference_hit": 72.5,
+        "automated_citation_validity": 100.0,
+        "false_abstention_rate": 35.0,
+        "automated_correct_abstention": 100.0,
+        "request_success_rate": 100.0,
+        "request_error_rate": 0.0,
+        "timeout_rate": 0.0,
+        "average_latency_ms": 6135.660399999999,
+        "p95_latency_ms": 8788.23
+      }
+    },
+    "aggregated_metrics": [
+      {
+        "metric_key": "overall_correctness",
+        "label": "Overall correctness (PRIMARY)",
+        "unit": "percent",
+        "baseline": 32.0,
+        "seed_42": 52.0,
+        "seed_1337": 50.0,
+        "seed_2024": 54.0,
+        "mean": 52.0,
+        "stddev": 1.632993161855452
+      },
+      {
+        "metric_key": "legal_correctness",
+        "label": "Legal correctness",
+        "unit": "percent",
+        "baseline": 40.0,
+        "seed_42": 40.0,
+        "seed_1337": 37.5,
+        "seed_2024": 42.5,
+        "mean": 40.0,
+        "stddev": 2.041241452319315
+      },
+      {
+        "metric_key": "evidence_supported",
+        "label": "Evidence supported",
+        "unit": "percent",
+        "baseline": 100.0,
+        "seed_42": 65.0,
+        "seed_1337": 65.0,
+        "seed_2024": 65.0,
+        "mean": 65.0,
+        "stddev": 0.0
+      },
+      {
+        "metric_key": "citation_relevance",
+        "label": "Human citation relevance",
+        "unit": "percent",
+        "baseline": 50.0,
+        "seed_42": 12.5,
+        "seed_1337": 12.5,
+        "seed_2024": 12.5,
+        "mean": 12.5,
+        "stddev": 0.0
+      },
+      {
+        "metric_key": "abstention_accuracy",
+        "label": "Human abstention accuracy",
+        "unit": "percent",
+        "baseline": 0.0,
+        "seed_42": 100.0,
+        "seed_1337": 100.0,
+        "seed_2024": 100.0,
+        "mean": 100.0,
+        "stddev": 0.0
+      },
+      {
+        "metric_key": "material_hallucination_rate",
+        "label": "Material hallucination rate",
+        "unit": "percent",
+        "baseline": 0.0,
+        "seed_42": 0.0,
+        "seed_1337": 0.0,
+        "seed_2024": 0.0,
+        "mean": 0.0,
+        "stddev": 0.0
+      },
+      {
+        "metric_key": "automated_retrieval_hit",
+        "label": "Automated retrieval hit",
+        "unit": "percent",
+        "baseline": 45.0,
+        "seed_42": 70.0,
+        "seed_1337": 70.0,
+        "seed_2024": 70.0,
+        "mean": 70.0,
+        "stddev": 0.0
+      },
+      {
+        "metric_key": "automated_reference_hit",
+        "label": "Automated reference hit",
+        "unit": "percent",
+        "baseline": 45.0,
+        "seed_42": 72.5,
+        "seed_1337": 72.5,
+        "seed_2024": 72.5,
+        "mean": 72.5,
+        "stddev": 0.0
+      },
+      {
+        "metric_key": "automated_citation_validity",
+        "label": "Automated citation validity",
+        "unit": "percent",
+        "baseline": 100.0,
+        "seed_42": 100.0,
+        "seed_1337": 100.0,
+        "seed_2024": 100.0,
+        "mean": 100.0,
+        "stddev": 0.0
+      },
+      {
+        "metric_key": "false_abstention_rate",
+        "label": "False abstention rate",
+        "unit": "percent",
+        "baseline": 0.0,
+        "seed_42": 35.0,
+        "seed_1337": 32.5,
+        "seed_2024": 35.0,
+        "mean": 34.166666666666664,
+        "stddev": 1.178511301977579
+      },
+      {
+        "metric_key": "request_success_rate",
+        "label": "Request success rate",
+        "unit": "percent",
+        "baseline": 100.0,
+        "seed_42": 100.0,
+        "seed_1337": 98.0,
+        "seed_2024": 100.0,
+        "mean": 99.33333333333333,
+        "stddev": 0.9428090415820634
+      },
+      {
+        "metric_key": "request_error_rate",
+        "label": "Request error rate",
+        "unit": "percent",
+        "baseline": 0.0,
+        "seed_42": 0.0,
+        "seed_1337": 2.0,
+        "seed_2024": 0.0,
+        "mean": 0.6666666666666666,
+        "stddev": 0.9428090415820634
+      },
+      {
+        "metric_key": "timeout_rate",
+        "label": "Timeout rate",
+        "unit": "percent",
+        "baseline": 0.0,
+        "seed_42": 0.0,
+        "seed_1337": 2.0,
+        "seed_2024": 0.0,
+        "mean": 0.6666666666666666,
+        "stddev": 0.9428090415820634
+      },
+      {
+        "metric_key": "average_latency_ms",
+        "label": "Average latency",
+        "unit": "milliseconds",
+        "baseline": 2.4187999999999996,
+        "seed_42": 5657.955200000001,
+        "seed_1337": 6500.169600000002,
+        "seed_2024": 6135.660399999999,
+        "mean": 6097.928400000001,
+        "stddev": 344.8662076417851
+      },
+      {
+        "metric_key": "p95_latency_ms",
+        "label": "p95 latency",
+        "unit": "milliseconds",
+        "baseline": 3.06,
+        "seed_42": 7643.26,
+        "seed_1337": 9111.99,
+        "seed_2024": 8788.23,
+        "mean": 8514.493333333334,
+        "stddev": 630.0744798478631
+      }
+    ]
+  }
 }
