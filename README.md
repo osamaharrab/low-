@@ -457,7 +457,7 @@ To see the counters move, call `/rag/answer` once, then check `/metrics` again.
 
 ## Evaluation
 
-Run the smoke evaluation after the stack is running and Weaviate is seeded:
+`eval_rag_smoke.py` remains the fast 5-question RAG smoke check. Run it after the stack is running and Weaviate is seeded:
 
 ```powershell
 python eval_rag_smoke.py --api-url http://localhost:8001 --timeout 300 --output outputs/rag_smoke_results.json
@@ -470,6 +470,58 @@ python -m pip install httpx
 ```
 
 The evaluation fixture is `data/rag_smoke.json`. The generated report is written under `outputs/`, which should not be committed.
+
+`eval/run_eval.py` is the separate 50-question Capstone evaluation workflow. It uses a frozen held-out JSONL file, a deterministic BM25-only Top-1 baseline with a template answer, three full-system RAG runs, human grading, and final reporting with mean +/- population standard deviation.
+
+Validate the held-out set:
+
+```bash
+python eval/run_eval.py validate
+```
+
+The `validate` command checks fixture structure, distribution, expected chunk IDs, exact seed references, duplicate normalized questions, and validation status counts. Structural validation can pass while rows are still marked `pending`; final collection is blocked until the team manually approves all 50 examples and adds reviewer names.
+
+After the team manually approves all 50 examples, run the API at temperature zero for final collection. Do not edit or commit `.env` merely for evaluation:
+
+```bash
+LLM_TEMPERATURE=0 docker compose up -d --force-recreate api
+docker compose exec -T api sh -lc 'printf "LLM_TEMPERATURE=%s\n" "$LLM_TEMPERATURE"'
+curl -fsS http://localhost:8001/readyz | python -m json.tool
+```
+
+The printed temperature must be zero before final collection.
+
+Collect the deterministic baseline plus three full-system runs:
+
+```bash
+python eval/run_eval.py collect \
+  --api-url http://localhost:8001 \
+  --weaviate-url http://localhost:8081 \
+  --seeds 42 1337 2024 \
+  --timeout 300
+```
+
+Collection writes a timestamped directory under `eval/results/` containing raw JSONL results and `human_review.csv`. Complete every required human field before aggregation:
+
+- `legal_correct`: `1` if the answer is legally correct for an answerable question, else `0`.
+- `evidence_supported`: `1` if the substantive answer is supported by returned evidence, else `0`.
+- `citation_relevant`: `1` if citations are relevant to the answer, else `0`.
+- `material_hallucination`: `1` if the answer contains a material unsupported claim, else `0`.
+- `abstention_correct`: `1` if abstention behavior is correct for an abstention question, else `0`.
+- `reviewer`: reviewer name or initials.
+- `review_notes`: optional notes, especially useful for failures.
+
+For out-of-scope questions, a correct response clearly declines the unrelated question and does not provide a substantive unrelated answer. For insufficient-facts employment questions, a correct response may say that a reliable conclusion, compensation amount, or court prediction cannot be made, ask for missing facts, or state a cautious general rule. It must not invent facts, promise a court outcome, give an unsupported compensation figure, or present a definitive personalized legal conclusion. A safe partial response can receive `abstention_correct = 1` when it refuses the unsupported conclusion while giving limited general guidance.
+
+Aggregate final reviewed results:
+
+```bash
+python eval/run_eval.py aggregate \
+  --run-dir eval/results/<timestamp> \
+  --next-hypothesis "Replace this with the evidence-based team hypothesis"
+```
+
+Aggregation requires completed human grading. It generates `<run-directory>/summary.json`, `eval/EVALUATION_REPORT.md`, and `eval/failure_cases.md`. The report shows the deterministic BM25 baseline, each full-system seed run, full-system mean +/- population standard deviation, Retrieval Hit Rate@5, secondary citation/abstention/reliability metrics, and error breakdowns by category, question style, and difficulty.
 
 Run the KG Text2Cypher evaluation after the stack is running and Neo4j is reachable:
 
