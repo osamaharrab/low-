@@ -1,0 +1,3 @@
+system_name,review_rows,weighted_outputs,answer_outputs,abstention_outputs,legal_correct_count,legal_correct_rate,evidence_supported_count,evidence_supported_rate,citation_relevant_count,citation_relevant_rate,material_hallucination_count,material_hallucination_rate,abstention_correct_count,abstention_accuracy,overall_correct_count,overall_correctness
+bm25_top1_baseline,50,50,40,10,16,40.0,40,100.0,20,50.0,0,0.0,0,0.0,16,32.0
+rag_full_system,101,150,120,30,48,40.0,78,65.0,15,12.5,0,0.0,30,100.0,78,52.0

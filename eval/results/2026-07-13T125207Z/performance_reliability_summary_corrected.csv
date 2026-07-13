@@ -1,0 +1,6 @@
+system_or_run,total_requests,successful_requests,success_rate,error_detail_count,error_rate,http_non_2xx_count,http_non_2xx_rate,http_5xx_count,http_5xx_rate,timeout_count,timeout_rate,latency_average_ms,latency_median_ms,latency_p95_ms,latency_max_ms
+bm25_top1_baseline,50,50,100.0,0,0.0,,,,,0,0.0,2.42,2.35,3.06,3.97
+system_seed_42,50,50,100.0,0,0.0,0,0.0,0,0.0,0,0.0,5657.96,5949.2,7643.26,8902.75
+system_seed_1337,50,49,98.0,1,2.0,1,2.0,1,2.0,1,2.0,6500.17,6138.27,9111.99,30130.59
+system_seed_2024,50,50,100.0,0,0.0,0,0.0,0,0.0,0,0.0,6135.66,6252.96,8788.23,13812.04
+rag_full_system_aggregate,150,149,99.33,1,0.67,1,0.67,1,0.67,1,0.67,6097.93,6107.35,8788.23,30130.59

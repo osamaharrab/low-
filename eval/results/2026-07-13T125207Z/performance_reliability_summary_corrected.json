@@ -1,0 +1,139 @@
+{
+  "methodology": {
+    "baseline_success": "A local baseline record is successful when error_detail is empty; HTTP status is not applicable.",
+    "rag_success": "A RAG request is successful when HTTP status is 2xx and error_detail is empty.",
+    "p95_method": "nearest-rank"
+  },
+  "aggregates": [
+    {
+      "system_or_run": "bm25_top1_baseline",
+      "total_requests": 50,
+      "successful_requests": 50,
+      "success_rate": 100.0,
+      "error_detail_count": 0,
+      "error_rate": 0.0,
+      "http_non_2xx_count": null,
+      "http_non_2xx_rate": null,
+      "http_5xx_count": null,
+      "http_5xx_rate": null,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "latency_average_ms": 2.42,
+      "latency_median_ms": 2.35,
+      "latency_p95_ms": 3.06,
+      "latency_max_ms": 3.97,
+      "http_status_counts": {
+        "not_applicable": 50
+      }
+    },
+    {
+      "system_or_run": "rag_full_system_aggregate",
+      "total_requests": 150,
+      "successful_requests": 149,
+      "success_rate": 99.33,
+      "error_detail_count": 1,
+      "error_rate": 0.67,
+      "http_non_2xx_count": 1,
+      "http_non_2xx_rate": 0.67,
+      "http_5xx_count": 1,
+      "http_5xx_rate": 0.67,
+      "timeout_count": 1,
+      "timeout_rate": 0.67,
+      "latency_average_ms": 6097.93,
+      "latency_median_ms": 6107.35,
+      "latency_p95_ms": 8788.23,
+      "latency_max_ms": 30130.59,
+      "http_status_counts": {
+        "200": 149,
+        "503": 1
+      }
+    }
+  ],
+  "runs": [
+    {
+      "system_or_run": "bm25_top1_baseline",
+      "total_requests": 50,
+      "successful_requests": 50,
+      "success_rate": 100.0,
+      "error_detail_count": 0,
+      "error_rate": 0.0,
+      "http_non_2xx_count": null,
+      "http_non_2xx_rate": null,
+      "http_5xx_count": null,
+      "http_5xx_rate": null,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "latency_average_ms": 2.42,
+      "latency_median_ms": 2.35,
+      "latency_p95_ms": 3.06,
+      "latency_max_ms": 3.97,
+      "http_status_counts": {
+        "not_applicable": 50
+      }
+    },
+    {
+      "system_or_run": "system_seed_42",
+      "total_requests": 50,
+      "successful_requests": 50,
+      "success_rate": 100.0,
+      "error_detail_count": 0,
+      "error_rate": 0.0,
+      "http_non_2xx_count": 0,
+      "http_non_2xx_rate": 0.0,
+      "http_5xx_count": 0,
+      "http_5xx_rate": 0.0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "latency_average_ms": 5657.96,
+      "latency_median_ms": 5949.2,
+      "latency_p95_ms": 7643.26,
+      "latency_max_ms": 8902.75,
+      "http_status_counts": {
+        "200": 50
+      }
+    },
+    {
+      "system_or_run": "system_seed_1337",
+      "total_requests": 50,
+      "successful_requests": 49,
+      "success_rate": 98.0,
+      "error_detail_count": 1,
+      "error_rate": 2.0,
+      "http_non_2xx_count": 1,
+      "http_non_2xx_rate": 2.0,
+      "http_5xx_count": 1,
+      "http_5xx_rate": 2.0,
+      "timeout_count": 1,
+      "timeout_rate": 2.0,
+      "latency_average_ms": 6500.17,
+      "latency_median_ms": 6138.27,
+      "latency_p95_ms": 9111.99,
+      "latency_max_ms": 30130.59,
+      "http_status_counts": {
+        "200": 49,
+        "503": 1
+      }
+    },
+    {
+      "system_or_run": "system_seed_2024",
+      "total_requests": 50,
+      "successful_requests": 50,
+      "success_rate": 100.0,
+      "error_detail_count": 0,
+      "error_rate": 0.0,
+      "http_non_2xx_count": 0,
+      "http_non_2xx_rate": 0.0,
+      "http_5xx_count": 0,
+      "http_5xx_rate": 0.0,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "latency_average_ms": 6135.66,
+      "latency_median_ms": 6252.96,
+      "latency_p95_ms": 8788.23,
+      "latency_max_ms": 13812.04,
+      "http_status_counts": {
+        "200": 50
+      }
+    }
+  ]
+}

@@ -1,0 +1,283 @@
+{
+  "evaluation_design": {
+    "held_out_questions": 50,
+    "answerable_questions": 40,
+    "expected_abstention_questions": 10,
+    "baseline_outputs": 50,
+    "rag_outputs": 150,
+    "rag_seeds": [
+      42,
+      1337,
+      2024
+    ],
+    "human_review_rows": 151,
+    "weighted_reviewed_outputs": 200
+  },
+  "fast": {
+    "baseline": {
+      "system_or_run": "bm25_top1_baseline",
+      "total_requests": 50,
+      "successful_requests": 50,
+      "success_rate": 100.0,
+      "error_detail_count": 0,
+      "error_rate": 0.0,
+      "http_non_2xx_count": null,
+      "http_non_2xx_rate": null,
+      "http_5xx_count": null,
+      "http_5xx_rate": null,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "latency_average_ms": 2.42,
+      "latency_median_ms": 2.35,
+      "latency_p95_ms": 3.06,
+      "latency_max_ms": 3.97,
+      "http_status_counts": {
+        "not_applicable": 50
+      }
+    },
+    "rag": {
+      "system_or_run": "rag_full_system_aggregate",
+      "total_requests": 150,
+      "successful_requests": 149,
+      "success_rate": 99.33,
+      "error_detail_count": 1,
+      "error_rate": 0.67,
+      "http_non_2xx_count": 1,
+      "http_non_2xx_rate": 0.67,
+      "http_5xx_count": 1,
+      "http_5xx_rate": 0.67,
+      "timeout_count": 1,
+      "timeout_rate": 0.67,
+      "latency_average_ms": 6097.93,
+      "latency_median_ms": 6107.35,
+      "latency_p95_ms": 8788.23,
+      "latency_max_ms": 30130.59,
+      "http_status_counts": {
+        "200": 149,
+        "503": 1
+      }
+    }
+  },
+  "reliable": {
+    "baseline": {
+      "system_or_run": "bm25_top1_baseline",
+      "total_requests": 50,
+      "successful_requests": 50,
+      "success_rate": 100.0,
+      "error_detail_count": 0,
+      "error_rate": 0.0,
+      "http_non_2xx_count": null,
+      "http_non_2xx_rate": null,
+      "http_5xx_count": null,
+      "http_5xx_rate": null,
+      "timeout_count": 0,
+      "timeout_rate": 0.0,
+      "latency_average_ms": 2.42,
+      "latency_median_ms": 2.35,
+      "latency_p95_ms": 3.06,
+      "latency_max_ms": 3.97,
+      "http_status_counts": {
+        "not_applicable": 50
+      }
+    },
+    "rag": {
+      "system_or_run": "rag_full_system_aggregate",
+      "total_requests": 150,
+      "successful_requests": 149,
+      "success_rate": 99.33,
+      "error_detail_count": 1,
+      "error_rate": 0.67,
+      "http_non_2xx_count": 1,
+      "http_non_2xx_rate": 0.67,
+      "http_5xx_count": 1,
+      "http_5xx_rate": 0.67,
+      "timeout_count": 1,
+      "timeout_rate": 0.67,
+      "latency_average_ms": 6097.93,
+      "latency_median_ms": 6107.35,
+      "latency_p95_ms": 8788.23,
+      "latency_max_ms": 30130.59,
+      "http_status_counts": {
+        "200": 149,
+        "503": 1
+      }
+    }
+  },
+  "correct": {
+    "baseline": {
+      "system_name": "bm25_top1_baseline",
+      "review_rows": 50,
+      "weighted_outputs": 50,
+      "answer_outputs": 40,
+      "abstention_outputs": 10,
+      "legal_correct_count": 16,
+      "legal_correct_rate": 40.0,
+      "evidence_supported_count": 40,
+      "evidence_supported_rate": 100.0,
+      "citation_relevant_count": 20,
+      "citation_relevant_rate": 50.0,
+      "material_hallucination_count": 0,
+      "material_hallucination_rate": 0.0,
+      "abstention_correct_count": 0,
+      "abstention_accuracy": 0.0,
+      "overall_correct_count": 16,
+      "overall_correctness": 32.0
+    },
+    "rag": {
+      "system_name": "rag_full_system",
+      "review_rows": 101,
+      "weighted_outputs": 150,
+      "answer_outputs": 120,
+      "abstention_outputs": 30,
+      "legal_correct_count": 48,
+      "legal_correct_rate": 40.0,
+      "evidence_supported_count": 78,
+      "evidence_supported_rate": 65.0,
+      "citation_relevant_count": 15,
+      "citation_relevant_rate": 12.5,
+      "material_hallucination_count": 0,
+      "material_hallucination_rate": 0.0,
+      "abstention_correct_count": 30,
+      "abstention_accuracy": 100.0,
+      "overall_correct_count": 78,
+      "overall_correctness": 52.0
+    }
+  },
+  "automated_metrics": {
+    "bm25_top1_baseline": {
+      "total_outputs": 50,
+      "answerable_outputs": 40,
+      "expected_abstention_outputs": 10,
+      "automated_retrieval_hit_rate": 45.0,
+      "automated_reference_hit_rate": 45.0,
+      "automated_citation_validity_rate": 100.0,
+      "false_abstention_count": 0,
+      "false_abstention_rate": 0.0,
+      "correct_abstention_count": 0,
+      "correct_abstention_rate": 0.0
+    },
+    "rag_full_system": {
+      "total_outputs": 150,
+      "answerable_outputs": 120,
+      "expected_abstention_outputs": 30,
+      "automated_retrieval_hit_rate": 70.0,
+      "automated_reference_hit_rate": 72.5,
+      "automated_citation_validity_rate": 100.0,
+      "false_abstention_count": 41,
+      "false_abstention_rate": 34.17,
+      "correct_abstention_count": 30,
+      "correct_abstention_rate": 100.0
+    }
+  },
+  "refined_error_categories": {
+    "baseline": {
+      "retrieval_or_source_mismatch": 20,
+      "missed_abstention": 10,
+      "incomplete_or_incorrect_answer": 4
+    },
+    "rag": {
+      "citation_selection_issue": 40,
+      "retrieval_or_source_mismatch": 23,
+      "false_abstention": 41,
+      "incomplete_or_incorrect_answer": 7,
+      "empty_or_failed_generation": 1
+    }
+  },
+  "representative_failures": [
+    {
+      "question_id": "lawz-003",
+      "system_name": "rag_full_system",
+      "occurrences": "system_seed_42|system_seed_1337|system_seed_2024",
+      "occurrence_weight": "3",
+      "expected_behavior": "answer",
+      "primary_failure": "false_abstention",
+      "failure_flags": "legal_incorrect|evidence_unsupported|citation_irrelevant",
+      "question": "عقدي محدد المدة وخلصت مدته بس ضليت أشتغل بنفس المكان، شو بصير بالعقد؟",
+      "gold_answer": "العقد محدد المدة ينتهي من تلقاء نفسه بانتهاء مدته، لكن إذا استمر الطرفان في تنفيذه بعد انقضاء المدة اعتبر ذلك تجديدًا له لمدة غير محدودة من بداية الاستخدام.",
+      "actual_answer": "لا تكفي قاعدة المعرفة الحالية للإجابة بثقة.",
+      "returned_citations": "[]",
+      "legal_correct": "0",
+      "evidence_supported": "0",
+      "citation_relevant": "0",
+      "material_hallucination": "0",
+      "abstention_correct": "0",
+      "review_notes": "Incorrect abstention on an answerable legal question."
+    },
+    {
+      "question_id": "lawz-030",
+      "system_name": "rag_full_system",
+      "occurrences": "system_seed_42|system_seed_1337",
+      "occurrence_weight": "2",
+      "expected_behavior": "answer",
+      "primary_failure": "citation_selection_issue",
+      "failure_flags": "citation_irrelevant",
+      "question": "ما مدة الإجازة المرضية المدفوعة، ومتى يمكن تجديدها؟",
+      "gold_answer": "لكل عامل الحق في إجازة مرضية مدتها أربعة عشر يومًا خلال السنة الواحدة بأجر كامل بناء على تقرير من الطبيب المعتمد. ويجوز تجديدها لمدة أربعة عشر يومًا أخرى بأجر كامل إذا كان العامل نزيل أحد المستشفيات، بناء على تقرير طبي معتمد وفق ما ورد في المادة.",
+      "actual_answer": "الإجابة المختصرة:\nمدة الإجازة المرضية المدفوعة أربعة عشر يوما خلال السنة الواحدة بأجر كامل، ويجوز تجديدها لمدة أربعة عشر يوما أخرى بأجر كامل إذا كان العامل نزيل أحد المستشفيات.\n\nالتفسير:\nتنص النصوص المسترجعة على أن كل عامل يستحق إجازة مرضية مدتها أربعة عشر يوما بأجر كامل بناء على تقرير الطبيب المعتمد، ويجوز تجديدها لأربعة عشر يوما إضافية بأجر كامل في حال الإقامة في المستشفى وفق تقرير طبي معتمد، مع التمييز بين المؤسسات حسب عدد العمال.\n\nالمراجع:\n- الإجازة المرضية - قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 65\n\nتنبيه:\nهذا شرح أولي وليس استشارة قانونية.",
+      "returned_citations": "[{\"chunk_id\": \"official_labor_law_art_065\", \"reference\": \"قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 65\", \"source_name\": \"قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته\", \"source_page\": null, \"topic\": \"الإجازة المرضية\"}, {\"chunk_id\": \"betterwork_guide_page_043_p02\", \"reference\": \"دليل حول قانون العمل الأردني لمصانع الملابس الجاهزة، صفحة 43\", \"source_name\": \"دليل حول قانون العمل الأردني لمصانع الملابس الجاهزة - Better Work Jordan 2018\", \"source_page\": 43, \"topic\": \"الإجازات المرضية وإجازة الأمومة والرضاعة\"}, {\"chunk_id\": \"betterwork_guide_page_042_p01\", \"reference\": \"دليل حول قانون العمل الأردني لمصانع الملابس الجاهزة، صفحة 42\", \"source_name\": \"دليل حول قانون العمل الأردني لمصانع الملابس الجاهزة - Better Work Jordan 2018\", \"source_page\": 42, \"topic\": \"الإجازة السنوية المدفوعة\"}]",
+      "legal_correct": "1",
+      "evidence_supported": "1",
+      "citation_relevant": "0",
+      "material_hallucination": "0",
+      "abstention_correct": "0",
+      "review_notes": "Answer is correct and supported by Article 65, but additional returned citations concern unrelated leave provisions."
+    },
+    {
+      "question_id": "lawz-005",
+      "system_name": "rag_full_system",
+      "occurrences": "system_seed_42",
+      "occurrence_weight": "1",
+      "expected_behavior": "answer",
+      "primary_failure": "retrieval_or_source_mismatch",
+      "failure_flags": "legal_incorrect|citation_irrelevant",
+      "question": "ما أشكال العمل المرن التي يمكن الاتفاق عليها؟",
+      "gold_answer": "يجوز لصاحب العمل والعامل الاتفاق على شكل أو أكثر من العمل المرن، مثل العمل عن بعد، والعمل لبعض الوقت، والعمل ضمن ساعات مرنة، وأسبوع العمل المكثف، والسنة المرنة، وأي شكل يضيفه مجلس الوزراء بناء على تنسيب الوزير.",
+      "actual_answer": "الإجابة المختصرة:\nأشكال العمل المرن التي يمكن الاتفاق عليها كتابياً هي: العمل بعض الوقت، أسبوع العمل المكثف، السنة المرنة، والعمل عن بعد.\n\nالتفسير:\nيجوز الاتفاق كتابياً بين صاحب العمل والعامل على عقد عمل مرن وفق الأشكال التالية: العمل بعض الوقت بتخفيض ساعات العمل، أسبوع العمل المكثف بتوزيع ساعات الأسبوع على أيام أقل، السنة المرنة بتوزيع أيام العمل السنوي على أشهر محددة، والعمل عن بعد دون تواجد العامل في مكان العمل، وذلك بعد موافقة صاحب العمل ووفق نظام العمل المرن.\n\nالمراجع:\n- ساعات العمل العادية والعمل المرن - دليل حول قانون العمل الأردني لمصانع الملابس الجاهزة، صفحة 60\n- نظام العمل المرن رقم 22 لسنة 2017 وتعليمات العمل المرن لعام 2018\n\nتنبيه:\nهذا شرح أولي وليس استشارة قانونية.",
+      "returned_citations": "[{\"chunk_id\": \"betterwork_guide_page_060_p01\", \"reference\": \"دليل حول قانون العمل الأردني لمصانع الملابس الجاهزة، صفحة 60\", \"source_name\": \"دليل حول قانون العمل الأردني لمصانع الملابس الجاهزة - Better Work Jordan 2018\", \"source_page\": 60, \"topic\": \"ساعات العمل العادية والعمل المرن\"}, {\"chunk_id\": \"betterwork_guide_page_060_p02\", \"reference\": \"دليل حول قانون العمل الأردني لمصانع الملابس الجاهزة، صفحة 60\", \"source_name\": \"دليل حول قانون العمل الأردني لمصانع الملابس الجاهزة - Better Work Jordan 2018\", \"source_page\": 60, \"topic\": \"ساعات العمل العادية والعمل المرن\"}, {\"chunk_id\": \"betterwork_guide_page_010_p01\", \"reference\": \"دليل حول قانون العمل الأردني لمصانع الملابس الجاهزة، صفحة 10\", \"source_name\": \"دليل حول قانون العمل الأردني لمصانع الملابس الجاهزة - Better Work Jordan 2018\", \"source_page\": 10, \"topic\": \"الحد الأدنى لسن العمل وحماية الحدث العامل\"}]",
+      "legal_correct": "0",
+      "evidence_supported": "1",
+      "citation_relevant": "0",
+      "material_hallucination": "0",
+      "abstention_correct": "0",
+      "review_notes": "Answer omits flexible-hours work and the possibility of additional forms being approved by the Council of Ministers. One returned citation concerns child labour and is unrelated."
+    },
+    {
+      "question_id": "lawz-011",
+      "system_name": "rag_full_system",
+      "occurrences": "system_seed_2024",
+      "occurrence_weight": "1",
+      "expected_behavior": "answer",
+      "primary_failure": "incomplete_or_incorrect_answer",
+      "failure_flags": "legal_incorrect",
+      "question": "ما الحالات العامة لانتهاء عقد العمل حسب المادة 21؟",
+      "gold_answer": "ينتهي عقد العمل إذا اتفق الطرفان على إنهائه، أو انتهت مدة العقد أو العمل نفسه، أو توفي العامل أو أقعده مرض أو عجز مثبت بتقرير طبي، أو استوفى العامل شروط تقاعد الشيخوخة في قانون الضمان الاجتماعي ما لم يتفق الطرفان على غير ذلك.",
+      "actual_answer": "الإجابة المختصرة:\nينتهي عقد العمل في الحالات التالية: اتفاق الطرفين، انتهاء مدة العقد أو العمل، وفاة العامل أو عجزه بتقرير طبي، أو استيفاء شروط تقاعد الشيخوخة.\n\nالتفسير:\nتعتمد الإجابة على النص الصريح للمادة 21 التي تحدد الحالات الأربع العامة لانتهاء عقد العمل، وتؤكدها الوثيقة التوضيحية في الصفحة 33.\n\nالمراجع:\n- [1] انتهاء عقد العمل - قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 21\n- [3] إنهاء عقد العمل وحالات حظر الإنهاء - دليل حول قانون العمل الأردني لمصانع الملابس الجاهزة، صفحة 33\n\nتنبيه:\nهذا شرح أولي وليس استشارة قانونية.",
+      "returned_citations": "[{\"chunk_id\": \"official_labor_law_art_021\", \"reference\": \"قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 21\", \"source_name\": \"قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته\", \"source_page\": null, \"topic\": \"انتهاء عقد العمل\"}, {\"chunk_id\": \"official_labor_law_art_015\", \"reference\": \"قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته، المادة 15\", \"source_name\": \"قوانين العمل.docx - مواد مختارة من قانون العمل الأردني رقم 8 لسنة 1996 وتعديلاته\", \"source_page\": null, \"topic\": \"عقد العمل\"}, {\"chunk_id\": \"betterwork_guide_page_033_p01\", \"reference\": \"دليل حول قانون العمل الأردني لمصانع الملابس الجاهزة، صفحة 33\", \"source_name\": \"دليل حول قانون العمل الأردني لمصانع الملابس الجاهزة - Better Work Jordan 2018\", \"source_page\": 33, \"topic\": \"إنهاء عقد العمل وحالات حظر الإنهاء\"}]",
+      "legal_correct": "0",
+      "evidence_supported": "1",
+      "citation_relevant": "1",
+      "material_hallucination": "0",
+      "abstention_correct": "0",
+      "review_notes": "Answer omits illness as a medically established termination condition and omits the qualification that the retirement result may differ if the parties agree otherwise."
+    },
+    {
+      "question_id": "lawz-006",
+      "system_name": "rag_full_system",
+      "occurrences": "system_seed_1337",
+      "occurrence_weight": "1",
+      "expected_behavior": "answer",
+      "primary_failure": "empty_or_failed_generation",
+      "failure_flags": "legal_incorrect|evidence_unsupported|citation_irrelevant",
+      "question": "هل يستطيع صاحب العمل يحول عقدي لعمل مرن من غير موافقتي أو ينتقص من حقوقي؟",
+      "gold_answer": "لا. تحويل عقد العمل غير المرن إلى أحد أشكال العمل المرن يكون بالاتفاق بين صاحب العمل والعامل، ولا يجوز تحويل صفة العقد إلى عمل مرن أو بالعكس إذا كان ذلك ينتقص من حقوق العامل المنصوص عليها في القانون.",
+      "actual_answer": "",
+      "returned_citations": "[]",
+      "legal_correct": "0",
+      "evidence_supported": "0",
+      "citation_relevant": "0",
+      "material_hallucination": "0",
+      "abstention_correct": "0",
+      "review_notes": "Empty system output with no citations or retrieved evidence. Treat as a technical/API collection failure, not hallucination."
+    }
+  ]
+}

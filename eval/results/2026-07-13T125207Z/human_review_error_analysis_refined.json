@@ -1,0 +1,23 @@
+{
+  "source_file": "eval/results/2026-07-13T125207Z/human_review_error_analysis.csv",
+  "systems": {
+    "bm25_top1_baseline": {
+      "weighted_failure_outputs": 34,
+      "failure_categories": {
+        "retrieval_or_source_mismatch": 20,
+        "missed_abstention": 10,
+        "incomplete_or_incorrect_answer": 4
+      }
+    },
+    "rag_full_system": {
+      "weighted_failure_outputs": 112,
+      "failure_categories": {
+        "citation_selection_issue": 40,
+        "retrieval_or_source_mismatch": 23,
+        "false_abstention": 41,
+        "incomplete_or_incorrect_answer": 7,
+        "empty_or_failed_generation": 1
+      }
+    }
+  }
+}
