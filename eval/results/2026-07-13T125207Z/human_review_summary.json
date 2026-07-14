@@ -1,0 +1,77 @@
+{
+  "source_file": "eval/results/2026-07-13T125207Z/human_review.csv",
+  "human_review_rows": 151,
+  "weighted_total_outputs": 200,
+  "systems": [
+    {
+      "system_name": "bm25_top1_baseline",
+      "review_rows": 50,
+      "weighted_outputs": 50,
+      "answer_outputs": 40,
+      "abstention_outputs": 10,
+      "legal_correct_count": 16,
+      "legal_correct_rate": 40.0,
+      "evidence_supported_count": 40,
+      "evidence_supported_rate": 100.0,
+      "citation_relevant_count": 20,
+      "citation_relevant_rate": 50.0,
+      "material_hallucination_count": 0,
+      "material_hallucination_rate": 0.0,
+      "abstention_correct_count": 0,
+      "abstention_accuracy": 0.0,
+      "overall_correct_count": 16,
+      "overall_correctness": 32.0
+    },
+    {
+      "system_name": "rag_full_system",
+      "review_rows": 101,
+      "weighted_outputs": 150,
+      "answer_outputs": 120,
+      "abstention_outputs": 30,
+      "legal_correct_count": 48,
+      "legal_correct_rate": 40.0,
+      "evidence_supported_count": 78,
+      "evidence_supported_rate": 65.0,
+      "citation_relevant_count": 15,
+      "citation_relevant_rate": 12.5,
+      "material_hallucination_count": 0,
+      "material_hallucination_rate": 0.0,
+      "abstention_correct_count": 30,
+      "abstention_accuracy": 100.0,
+      "overall_correct_count": 78,
+      "overall_correctness": 52.0
+    }
+  ],
+  "comparison": {
+    "legal_correct_rate": {
+      "baseline": 40.0,
+      "rag_full_system": 40.0,
+      "difference_percentage_points": 0.0
+    },
+    "evidence_supported_rate": {
+      "baseline": 100.0,
+      "rag_full_system": 65.0,
+      "difference_percentage_points": -35.0
+    },
+    "citation_relevant_rate": {
+      "baseline": 50.0,
+      "rag_full_system": 12.5,
+      "difference_percentage_points": -37.5
+    },
+    "material_hallucination_rate": {
+      "baseline": 0.0,
+      "rag_full_system": 0.0,
+      "difference_percentage_points": 0.0
+    },
+    "abstention_accuracy": {
+      "baseline": 0.0,
+      "rag_full_system": 100.0,
+      "difference_percentage_points": 100.0
+    },
+    "overall_correctness": {
+      "baseline": 32.0,
+      "rag_full_system": 52.0,
+      "difference_percentage_points": 20.0
+    }
+  }
+}

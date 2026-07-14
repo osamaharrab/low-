@@ -14,6 +14,7 @@ The project is intentionally focused. It answers questions about Jordanian labor
 - Returns a clean Arabic answer, backend-generated citations, retrieved chunk previews, confidence, and a legal disclaimer.
 - Returns an insufficient-evidence answer when the retrieved context is not enough.
 - Clears citations for insufficient or weak-evidence answers so unrelated references are not shown.
+- Provides a separate Neo4j Text2Cypher Knowledge Graph proof of concept at `POST /kg/query`.
 
 ## What It Does Not Do
 
@@ -21,8 +22,7 @@ The project is intentionally focused. It answers questions about Jordanian labor
 - No DOCX parsing.
 - No contract review.
 - No risk scoring.
-- No Neo4j.
-- No knowledge graph.
+- No broad GraphRAG rebuild.
 - No LangChain.
 - No broad legal-chatbot behavior.
 - No production legal-advice workflow.
@@ -63,6 +63,88 @@ User
 
 Citations are created by the backend from retrieved chunks. The LLM is not trusted to invent or format citations.
 
+## Knowledge Graph Proof Of Concept
+
+The KG feature is separate from the stable RAG pipeline. It does not modify retrieval, embeddings, Weaviate, RAG prompts, RAG responses, or RAG evaluation.
+
+Architecture:
+
+```text
+Natural-language question
+  -> FastAPI POST /kg/query
+  -> schema-bounded LLM Cypher generation
+  -> Cypher extraction
+  -> read-only Cypher validation
+  -> Neo4j execution
+  -> records + nodes + relationships + generated Cypher + Arabic summary
+```
+
+Important files:
+
+- `api/kg.py`
+- `api/seed_neo4j.py`
+- `api/seed_graph.json`
+- `data/kg_questions.json`
+- `eval_kg.py`
+- `web/pages/kg.js`
+
+Environment variables:
+
+```env
+NEO4J_URI=bolt://neo4j:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=change_me_neo4j_password
+NEO4J_DATABASE=neo4j
+KG_QUERY_LIMIT=25
+KG_TIMEOUT_SECONDS=15
+KG_MAX_CYPHER_CHARS=4000
+```
+
+Start the stack:
+
+```powershell
+docker compose -p lawz-ai-jo up -d --build
+```
+
+Open Neo4j Browser:
+
+```text
+http://localhost:7474
+```
+
+Seed the graph scaffold:
+
+```powershell
+docker compose -p lawz-ai-jo exec -T api python -m api.seed_neo4j
+```
+
+Ask the KG endpoint:
+
+```powershell
+curl.exe -X POST http://localhost:8001/kg/query -H "Content-Type: application/json" -d "{\"question\":\"ما المواد المرتبطة بإنهاء عقد العمل؟\"}"
+```
+
+Run KG evaluation:
+
+```powershell
+python eval_kg.py --api-url http://localhost:8001 --fixture data/kg_questions.json --output outputs/kg_eval_results.json
+```
+
+`data/kg_questions.json` is intentionally an empty JSON array until the KG owner adds reviewed fixtures. Example shape:
+
+```json
+[
+  {
+    "question": "ما المواد المرتبطة بإنهاء عقد العمل؟",
+    "gold_cypher": "MATCH (law:Law)-[:HAS_ARTICLE]->(article:Article) WHERE article.title CONTAINS 'إنهاء' RETURN law, article LIMIT $limit"
+  }
+]
+```
+
+Teammate ownership boundary: `api/kg.py` contains `TODO(KG teammate):` sections for final schema, prompt, extraction, validation, execution, serialization, and orchestration logic. `api/seed_neo4j.py` contains `TODO(KG data owner):` sections for reviewed legal graph data. Do not claim this KG proof of concept is complete while those TODOs remain.
+
+Never commit the real `.env` file or a real `XAI_API_KEY`.
+
 ## Services And Ports
 
 | Service | URL | Notes |
@@ -70,6 +152,8 @@ Citations are created by the backend from retrieved chunks. The LLM is not trust
 | Web UI | http://localhost:3001 | Next.js UI |
 | API | http://localhost:8001 | FastAPI |
 | Weaviate | http://localhost:8081 | Vector database |
+| Neo4j Browser | http://localhost:7474 | Knowledge graph database |
+| Neo4j Bolt | bolt://localhost:7687 | Driver connection |
 | Metrics | http://localhost:8001/metrics/ | Prometheus text |
 | Ollama | http://localhost:11434 | Only needed when `LLM_PROVIDER=ollama` |
 
@@ -211,6 +295,14 @@ OLLAMA_BASE_URL=http://host.docker.internal:11434
 OLLAMA_MODEL=qwen3:4b
 OLLAMA_TIMEOUT_SECONDS=120
 
+NEO4J_URI=bolt://neo4j:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=change_me_neo4j_password
+NEO4J_DATABASE=neo4j
+KG_QUERY_LIMIT=25
+KG_TIMEOUT_SECONDS=15
+KG_MAX_CYPHER_CHARS=4000
+
 API_URL=http://api:8000
 NEXT_PUBLIC_API_URL=http://localhost:8001
 
@@ -245,6 +337,7 @@ Local `qwen3:4b` can be slow. Some answers may take 2-4 minutes depending on the
 `/readyz` checks:
 
 - Weaviate readiness.
+- Neo4j readiness with `RETURN 1 AS ok`.
 - The selected LLM provider configuration.
 
 For xAI, readiness does not call the generation API and does not spend tokens. It only checks that:
@@ -290,6 +383,31 @@ Response:
 
 The response shape is stable for the web UI and evaluation script.
 
+KG endpoint:
+
+```text
+POST /kg/query
+```
+
+Request:
+
+```json
+{
+  "question": "ما المواد المرتبطة بإنهاء عقد العمل؟"
+}
+```
+
+Response includes:
+
+- `answer`
+- `generated_cypher`
+- `parameters`
+- `records`
+- `nodes`
+- `relationships`
+- `row_count`
+- `disclaimer`
+
 ## Web UI
 
 The web UI:
@@ -329,12 +447,17 @@ Useful metric names include:
 - `rag_answers_total`
 - `rag_retrieved_chunks`
 - `rag_generation_errors_total`
+- `kg_queries_total`
+- `kg_rows_returned`
+- `kg_generation_errors_total`
+- `kg_validation_errors_total`
+- `kg_execution_errors_total`
 
 To see the counters move, call `/rag/answer` once, then check `/metrics` again.
 
 ## Evaluation
 
-Run the smoke evaluation after the stack is running and Weaviate is seeded:
+`eval_rag_smoke.py` remains the fast 5-question RAG smoke check. Run it after the stack is running and Weaviate is seeded:
 
 ```powershell
 python eval_rag_smoke.py --api-url http://localhost:8001 --timeout 300 --output outputs/rag_smoke_results.json
@@ -348,12 +471,72 @@ python -m pip install httpx
 
 The evaluation fixture is `data/rag_smoke.json`. The generated report is written under `outputs/`, which should not be committed.
 
+`eval/run_eval.py` is the separate 50-question Capstone evaluation workflow. It uses a frozen held-out JSONL file, a deterministic BM25-only Top-1 baseline with a template answer, three full-system RAG runs, human grading, and final reporting with mean +/- population standard deviation.
+
+Validate the held-out set:
+
+```bash
+python eval/run_eval.py validate
+```
+
+The `validate` command checks fixture structure, distribution, expected chunk IDs, exact seed references, duplicate normalized questions, and validation status counts. Structural validation can pass while rows are still marked `pending`; final collection is blocked until the team manually approves all 50 examples and adds reviewer names.
+
+After the team manually approves all 50 examples, run the API at temperature zero for final collection. Do not edit or commit `.env` merely for evaluation:
+
+```bash
+LLM_TEMPERATURE=0 docker compose up -d --force-recreate api
+docker compose exec -T api sh -lc 'printf "LLM_TEMPERATURE=%s\n" "$LLM_TEMPERATURE"'
+curl -fsS http://localhost:8001/readyz | python -m json.tool
+```
+
+The printed temperature must be zero before final collection.
+
+Collect the deterministic baseline plus three full-system runs:
+
+```bash
+python eval/run_eval.py collect \
+  --api-url http://localhost:8001 \
+  --weaviate-url http://localhost:8081 \
+  --seeds 42 1337 2024 \
+  --timeout 300
+```
+
+Collection writes a timestamped directory under `eval/results/` containing raw JSONL results and `human_review.csv`. Complete every required human field before aggregation:
+
+- `legal_correct`: `1` if the answer is legally correct for an answerable question, else `0`.
+- `evidence_supported`: `1` if the substantive answer is supported by returned evidence, else `0`.
+- `citation_relevant`: `1` if citations are relevant to the answer, else `0`.
+- `material_hallucination`: `1` if the answer contains a material unsupported claim, else `0`.
+- `abstention_correct`: `1` if abstention behavior is correct for an abstention question, else `0`.
+- `reviewer`: reviewer name or initials.
+- `review_notes`: optional notes, especially useful for failures.
+
+For out-of-scope questions, a correct response clearly declines the unrelated question and does not provide a substantive unrelated answer. For insufficient-facts employment questions, a correct response may say that a reliable conclusion, compensation amount, or court prediction cannot be made, ask for missing facts, or state a cautious general rule. It must not invent facts, promise a court outcome, give an unsupported compensation figure, or present a definitive personalized legal conclusion. A safe partial response can receive `abstention_correct = 1` when it refuses the unsupported conclusion while giving limited general guidance.
+
+Aggregate final reviewed results:
+
+```bash
+python eval/run_eval.py aggregate \
+  --run-dir eval/results/<timestamp> \
+  --next-hypothesis "Replace this with the evidence-based team hypothesis"
+```
+
+Aggregation requires completed human grading. It generates `<run-directory>/summary.json`, `eval/EVALUATION_REPORT.md`, and `eval/failure_cases.md`. The report shows the deterministic BM25 baseline, each full-system seed run, full-system mean +/- population standard deviation, Retrieval Hit Rate@5, secondary citation/abstention/reliability metrics, and error breakdowns by category, question style, and difficulty.
+
+Run the KG Text2Cypher evaluation after the stack is running and Neo4j is reachable:
+
+```powershell
+python eval_kg.py --api-url http://localhost:8001 --fixture data/kg_questions.json --output outputs/kg_eval_results.json
+```
+
+The KG fixture starts empty on purpose. Add reviewed question/gold Cypher pairs before using the results as a meaningful quality signal.
+
 ## Validation Commands
 
 Safe local validation commands:
 
 ```bash
-python -m compileall -q api tests eval_rag_smoke.py
+python -m compileall -q api tests eval_kg.py eval_rag_smoke.py
 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q
 docker compose config --services
 ```
@@ -366,6 +549,7 @@ These commands do not run live xAI calls, do not start Docker containers, and do
 - `/readyz` says LLM is not ready: check that `.env` has `XAI_API_KEY`, `XAI_BASE_URL`, and `XAI_MODEL`.
 - Port already in use: stop the other service using ports `3001`, `8001`, `8081`, or `11434`.
 - Docker Desktop not running: start Docker Desktop and wait until it is ready.
+- Neo4j is not ready: set `NEO4J_PASSWORD` in `.env`, rebuild/start the stack, and check `http://localhost:7474`.
 - Weaviate returns no useful answers: make sure seeding was run with `python -m api.seed_weaviate` inside the API container.
 - `/metrics` redirects to `/metrics/`: use `curl.exe -L http://localhost:8001/metrics` or open `http://localhost:8001/metrics/`.
 - `jq` may not be installed on Windows. It is optional.
@@ -378,7 +562,7 @@ Stop containers:
 docker compose -p lawz-ai-jo down
 ```
 
-Delete containers and the Weaviate volume:
+Delete containers and the Weaviate/Neo4j volumes:
 
 ```powershell
 docker compose -p lawz-ai-jo down -v

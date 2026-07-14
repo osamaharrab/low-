@@ -1,0 +1,16 @@
+metric_key,label,unit,baseline,seed_42,seed_1337,seed_2024,mean,stddev
+overall_correctness,Overall correctness (PRIMARY),percent,32.0,52.0,50.0,54.0,52.0,1.632993161855452
+legal_correctness,Legal correctness,percent,40.0,40.0,37.5,42.5,40.0,2.041241452319315
+evidence_supported,Evidence supported,percent,100.0,65.0,65.0,65.0,65.0,0.0
+citation_relevance,Human citation relevance,percent,50.0,12.5,12.5,12.5,12.5,0.0
+abstention_accuracy,Human abstention accuracy,percent,0.0,100.0,100.0,100.0,100.0,0.0
+material_hallucination_rate,Material hallucination rate,percent,0.0,0.0,0.0,0.0,0.0,0.0
+automated_retrieval_hit,Automated retrieval hit,percent,45.0,70.0,70.0,70.0,70.0,0.0
+automated_reference_hit,Automated reference hit,percent,45.0,72.5,72.5,72.5,72.5,0.0
+automated_citation_validity,Automated citation validity,percent,100.0,100.0,100.0,100.0,100.0,0.0
+false_abstention_rate,False abstention rate,percent,0.0,35.0,32.5,35.0,34.166666666666664,1.178511301977579
+request_success_rate,Request success rate,percent,100.0,100.0,98.0,100.0,99.33333333333333,0.9428090415820634
+request_error_rate,Request error rate,percent,0.0,0.0,2.0,0.0,0.6666666666666666,0.9428090415820634
+timeout_rate,Timeout rate,percent,0.0,0.0,2.0,0.0,0.6666666666666666,0.9428090415820634
+average_latency_ms,Average latency,milliseconds,2.4187999999999996,5657.955200000001,6500.169600000002,6135.660399999999,6097.928400000001,344.8662076417851
+p95_latency_ms,p95 latency,milliseconds,3.06,7643.26,9111.99,8788.23,8514.493333333334,630.0744798478631

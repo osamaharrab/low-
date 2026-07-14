@@ -5,6 +5,7 @@ pydantic-settings
 httpx
 python-dotenv
 weaviate-client>=3.25,<4
+neo4j>=5.17,<6
 sentence-transformers>=2.2,<3
 numpy
 prometheus-client
