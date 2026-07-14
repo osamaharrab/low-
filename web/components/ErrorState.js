@@ -1,4 +1,4 @@
-export default function ErrorState({ title = "Request failed", message, onRetry }) {
+export default function ErrorState({ title = "Request failed", message, onRetry, retryLabel = "Retry" }) {
   return (
     <section className="state-card state-card--error" role="alert">
       <div>
@@ -7,7 +7,7 @@ export default function ErrorState({ title = "Request failed", message, onRetry 
       </div>
       {onRetry && (
         <button type="button" className="button button--secondary" onClick={onRetry}>
-          Retry
+          {retryLabel}
         </button>
       )}
     </section>

@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import httpx
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from api.deps import Settings, get_settings
 from api.generator import GeneratorError, INSUFFICIENT_ANSWER
 from api.kg import KGExecutionError, UnsupportedCypherError, query_knowledge_graph
-from api.models import HealthResponse, KGRequest, KGResponse, RAGRequest, RAGResponse
+from api.models import HealthResponse, KGRequest, KGResponse, RAGRequest, RAGResponse, TranslateRequest, TranslateResponse
 from api.observability import (
     KG_EXECUTION_ERRORS_TOTAL,
     KG_GENERATION_ERRORS_TOTAL,
@@ -19,8 +19,11 @@ from api.observability import (
     RAG_GENERATION_ERRORS_TOTAL,
     RAG_RETRIEVED_CHUNKS,
     setup_observability,
+    utc_now_iso,
+    log_json,
 )
 from api.rag import answer_question
+from api.translation import TranslationBadGatewayError, TranslationUnavailableError, translate_arabic_to_english
 
 
 SERVICE_NAME = "lawz-ai-jo-api"
@@ -181,6 +184,40 @@ def create_app() -> FastAPI:
         KG_QUERIES_TOTAL.labels(outcome=outcome).inc()
         KG_ROWS_RETURNED.observe(response.row_count)
         return response
+
+    @app.post("/translate", response_model=TranslateResponse)
+    async def translate(request: TranslateRequest, http_request: Request) -> TranslateResponse:
+        settings = get_settings()
+        try:
+            translated_text = await translate_arabic_to_english(request.text, settings)
+        except TranslationUnavailableError as exc:
+            log_json(
+                {
+                    "ts": utc_now_iso(),
+                    "level": "warning",
+                    "request_id": getattr(http_request.state, "request_id", None),
+                    "path": "/translate",
+                    "event": "translation_unavailable",
+                    "error_type": type(exc).__name__,
+                    "text_length": len(request.text),
+                }
+            )
+            raise HTTPException(status_code=503, detail="Translation service is temporarily unavailable.") from exc
+        except TranslationBadGatewayError as exc:
+            log_json(
+                {
+                    "ts": utc_now_iso(),
+                    "level": "warning",
+                    "request_id": getattr(http_request.state, "request_id", None),
+                    "path": "/translate",
+                    "event": "translation_bad_gateway",
+                    "error_type": type(exc).__name__,
+                    "text_length": len(request.text),
+                }
+            )
+            raise HTTPException(status_code=502, detail="Translation service returned an invalid response.") from exc
+
+        return TranslateResponse(translated_text=translated_text)
 
     return app
 

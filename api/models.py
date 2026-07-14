@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class RAGRequest(BaseModel):
@@ -72,3 +72,21 @@ class ReadyResponse(BaseModel):
     status: str
     service: str
     dependencies: dict[str, dict[str, Any]]
+
+
+class TranslateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(..., min_length=1, max_length=12000)
+
+    @field_validator("text")
+    @classmethod
+    def text_must_not_be_blank(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("Translation text must not be empty.")
+        return stripped
+
+
+class TranslateResponse(BaseModel):
+    translated_text: str

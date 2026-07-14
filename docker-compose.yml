@@ -68,6 +68,8 @@ services:
       API_URL: ${API_URL:-http://api:8000}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001}
       WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:3001}
+      LIBRETRANSLATE_URL: ${LIBRETRANSLATE_URL:-http://libretranslate:5000}
+      LIBRETRANSLATE_TIMEOUT_SECONDS: ${LIBRETRANSLATE_TIMEOUT_SECONDS:-30}
     depends_on:
       weaviate:
         condition: service_healthy
@@ -81,6 +83,22 @@ services:
       timeout: 5s
       retries: 12
       start_period: 20s
+
+  libretranslate:
+    image: libretranslate/libretranslate:latest
+    restart: unless-stopped
+    environment:
+      LT_LOAD_ONLY: ar,en
+    expose:
+      - "5000"
+    volumes:
+      - libretranslate_models:/home/libretranslate/.local:rw
+    healthcheck:
+      test: ["CMD-SHELL", "./venv/bin/python scripts/healthcheck.py"]
+      interval: 15s
+      timeout: 8s
+      retries: 10
+      start_period: 120s
 
   web:
     build:
@@ -96,3 +114,4 @@ services:
 volumes:
   weaviate_data:
   neo4j_data:
+  libretranslate_models:

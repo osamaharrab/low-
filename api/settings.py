@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     api_url: str = "http://api:8000"
     next_public_api_url: str = "http://localhost:8001"
     web_origin: str = "http://localhost:3001"
+    libretranslate_url: str = "http://localhost:5000"
+    libretranslate_timeout_seconds: float = 30
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

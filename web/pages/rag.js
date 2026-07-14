@@ -1,14 +1,14 @@
 import Head from "next/head";
 
 import AppShell from "../components/AppShell";
-import EmptyState from "../components/EmptyState";
 import ErrorState from "../components/ErrorState";
 import LegalNotice from "../components/LegalNotice";
 import LoadingState from "../components/LoadingState";
 import PageHero from "../components/PageHero";
 import QueryComposer from "../components/QueryComposer";
 import StatusBadge from "../components/StatusBadge";
-import { useState } from "react";
+import TranslationToggle from "../components/TranslationToggle";
+import { useRef, useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 
@@ -19,8 +19,45 @@ const sampleQuestions = [
   "هل يجوز الخصم من أجر العامل؟",
 ];
 
-const GENERIC_ERROR_MESSAGE = "Something went wrong while processing your request. Please try again.";
-const MALFORMED_RESPONSE_MESSAGE = "The assistant returned an unexpected response. Please try again.";
+const GENERIC_ERROR_MESSAGE = "تعذر معالجة الطلب حالياً. يرجى المحاولة مرة أخرى.";
+const MALFORMED_RESPONSE_MESSAGE = "عاد المساعد باستجابة غير متوقعة. يرجى المحاولة مرة أخرى.";
+const INSUFFICIENT_FALLBACK = "لم تتضمن المصادر القانونية المتاحة أدلة كافية لإنتاج إجابة موثوقة لهذا السؤال.";
+const INSUFFICIENT_GUIDANCE = "يمكنك إعادة صياغة السؤال أو تحديد القانون، المادة، أو الواقعة القانونية المقصودة.";
+const INSUFFICIENT_ANSWER_PATTERNS = [
+  /لا\s+تكفي\s+قاعدة\s+المعرفة\s+الحالية\s+للإجابة\s+بثقة/i,
+  /المعلومات\s+غير\s+كافية/i,
+  /لا\s+توجد\s+معلومات\s+كافية/i,
+  /لا\s+أستطيع\s+الإجابة/i,
+  /لا\s+تتوفر\s+مصادر\s+كافية/i,
+];
+
+const ANSWER_SECTION_DEFS = [
+  {
+    key: "shortAnswer",
+    title: "الإجابة المختصرة",
+    labels: ["الإجابة المختصرة", "الجواب المختصر", "الخلاصة"],
+  },
+  {
+    key: "explanation",
+    title: "التفسير",
+    labels: ["التفسير", "الشرح", "التوضيح", "التفصيل"],
+  },
+  {
+    key: "references",
+    title: "المراجع",
+    labels: ["المراجع", "المصادر", "الاستناد"],
+  },
+  {
+    key: "disclaimer",
+    title: "تنبيه",
+    labels: ["تنبيه", "إخلاء مسؤولية", "ملاحظة"],
+  },
+];
+
+const ANSWER_SECTION_TITLES = ANSWER_SECTION_DEFS.reduce((acc, section) => {
+  acc[section.key] = section.title;
+  return acc;
+}, {});
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -47,6 +84,64 @@ function contentDirection(value) {
   return hasArabic(value) ? "rtl" : "auto";
 }
 
+function sectionKeyFromLabel(label) {
+  const normalizedLabel = toText(label).replace(/\s+/g, " ");
+  const match = ANSWER_SECTION_DEFS.find((section) => section.labels.some((knownLabel) => normalizedLabel === knownLabel));
+  return match?.key || "";
+}
+
+function splitAnswerSections(answerText) {
+  const sections = {
+    preface: [],
+    shortAnswer: [],
+    explanation: [],
+    references: [],
+    disclaimer: [],
+  };
+  let currentKey = "preface";
+
+  toText(answerText)
+    .split(/\r?\n/)
+    .forEach((line) => {
+      const headingMatch = line.match(/^\s*(?:[-*•\d.)،\s]+)?([^:：]{2,48})\s*[:：]\s*(.*)$/);
+      const headingKey = headingMatch ? sectionKeyFromLabel(headingMatch[1]) : "";
+
+      if (headingKey) {
+        currentKey = headingKey;
+        if (headingMatch[2]) {
+          sections[currentKey].push(headingMatch[2]);
+        }
+        return;
+      }
+
+      sections[currentKey].push(line);
+    });
+
+  Object.keys(sections).forEach((key) => {
+    sections[key] = sections[key].join("\n").trim();
+  });
+
+  if (!sections.shortAnswer && sections.preface) {
+    sections.shortAnswer = sections.preface;
+    sections.preface = "";
+  } else if (sections.preface) {
+    sections.explanation = [sections.preface, sections.explanation].filter(Boolean).join("\n\n");
+    sections.preface = "";
+  }
+
+  if (!sections.shortAnswer && !sections.explanation && answerText) {
+    sections.shortAnswer = toText(answerText);
+  }
+
+  return sections;
+}
+
+function isInsufficientAnswer(rag) {
+  const answerText = toText(rag.answerText);
+  const confidenceIsZero = rag.confidence === 0 && rag.citations.length === 0;
+  return confidenceIsZero || INSUFFICIENT_ANSWER_PATTERNS.some((pattern) => pattern.test(answerText));
+}
+
 function normalizeRagResult(result) {
   return {
     answerText: typeof result?.answer === "string" ? result.answer : "",
@@ -65,7 +160,7 @@ function confidenceInfo(value) {
   const ratio = value > 1 && value <= 100 ? value / 100 : value;
   if (ratio < 0 || ratio > 1) {
     return {
-      label: "Confidence returned",
+      label: "مؤشر الثقة",
       tone: "neutral",
       value: String(value),
     };
@@ -73,7 +168,7 @@ function confidenceInfo(value) {
 
   if (ratio >= 0.75) {
     return {
-      label: "High confidence",
+      label: "مؤشر ثقة مرتفع",
       tone: "success",
       value: `${Math.round(ratio * 100)}%`,
     };
@@ -81,14 +176,14 @@ function confidenceInfo(value) {
 
   if (ratio >= 0.45) {
     return {
-      label: "Medium confidence",
+      label: "مؤشر ثقة متوسط",
       tone: "accent",
       value: `${Math.round(ratio * 100)}%`,
     };
   }
 
   return {
-    label: "Limited confidence",
+    label: "مؤشر ثقة محدود",
     tone: "warning",
     value: `${Math.round(ratio * 100)}%`,
   };
@@ -101,44 +196,78 @@ function formatScore(value) {
   return value > 1 ? value.toFixed(2) : value.toFixed(3);
 }
 
-function citationMeta(citation) {
+function citationSourceKind(citation) {
+  if (citation.is_official === true) {
+    return { label: "مصدر قانوني رسمي", tone: "success" };
+  }
+
+  const sourceType = toText(citation.source_type || citation.type || citation.source_kind).toLowerCase();
+  if (!sourceType) {
+    return null;
+  }
+
+  if (/official|primary|statute|legislation|gazette|قانون|تشريع|الجريدة الرسمية/.test(sourceType)) {
+    return { label: "مصدر قانوني رسمي", tone: "success" };
+  }
+
+  if (/secondary|guide|summary|دليل|إرشاد|شرح/.test(sourceType)) {
+    return { label: "مصدر إرشادي", tone: "accent" };
+  }
+
+  return null;
+}
+
+function citationMeta(citation, title) {
+  const topic = toText(citation.topic || citation.topic_name);
+  const reference = toText(citation.reference || citation.ref);
+  const sourceName = toText(citation.source_name || citation.source);
+  const sourcePage = toText(citation.source_page || citation.page || citation.page_number);
+  const articleNumber = toText(citation.article_number || citation.article);
   const fields = [
-    ["Article", citation.article_number || citation.article],
-    ["Page", citation.page || citation.page_number],
-    ["Source", citation.source_name || citation.source],
+    ["الموضوع", topic && topic !== title ? topic : ""],
+    ["المرجع", reference && reference !== title ? reference : ""],
+    ["المصدر", sourceName],
+    ["الصفحة", sourcePage],
+    ["المادة", articleNumber],
   ];
 
-  return fields
-    .map(([label, value]) => [label, toText(value)])
-    .filter(([, value]) => value);
+  return fields.filter(([, value]) => value);
 }
 
 function CitationCard({ citation, index }) {
   const topic = toText(citation.topic || citation.topic_name);
   const reference = toText(citation.reference || citation.ref);
-  const title = reference || topic || `Reference ${index + 1}`;
-  const meta = citationMeta(citation);
+  const sourceName = toText(citation.source_name || citation.source);
+  const articleNumber = toText(citation.article_number || citation.article);
+  const title = reference || sourceName || topic || (articleNumber ? `المادة ${articleNumber}` : `مرجع ${index + 1}`);
+  const meta = citationMeta(citation, title);
+  const sourceKind = citationSourceKind(citation);
 
   return (
-    <article className="source-card">
-      <span className="source-card__label">Legal reference</span>
-      <strong className="source-card__title source-card__value" dir={contentDirection(title)} lang={hasArabic(title) ? "ar" : "en"}>
-        {title}
-      </strong>
-      {topic && topic !== title && (
-        <span className="source-card__value" dir={contentDirection(topic)} lang={hasArabic(topic) ? "ar" : "en"}>
-          {topic}
-        </span>
-      )}
-      {meta.length > 0 && (
-        <div className="source-card__meta">
-          {meta.map(([label, value]) => (
-            <span className="meta-pill" key={`${label}-${value}`} dir={contentDirection(value)}>
-              {label}: {value}
-            </span>
-          ))}
+    <article className="citation-card">
+      <span className="citation-card__number" aria-label={`مرجع ${index + 1}`}>
+        {index + 1}
+      </span>
+      <div className="citation-card__body">
+        <div className="citation-card__title-row">
+          <strong className="citation-card__title source-card__value" dir={contentDirection(title)} lang={hasArabic(title) ? "ar" : "en"}>
+            {title}
+          </strong>
+          {sourceKind && <StatusBadge tone={sourceKind.tone}>{sourceKind.label}</StatusBadge>}
         </div>
-      )}
+        {meta.length > 0 && (
+          <dl className="compact-meta-list">
+            {meta.map(([label, value]) => (
+              <div key={`${label}-${value}`}>
+                <dt>{label}</dt>
+                <dd dir={contentDirection(value)} lang={hasArabic(value) ? "ar" : "en"}>
+                  {value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
+      </div>
     </article>
   );
 }
@@ -150,6 +279,8 @@ function chunkPreview(chunk) {
 function RetrievedChunkCard({ chunk, index }) {
   const topic = toText(chunk.topic || chunk.topic_name);
   const reference = toText(chunk.reference || chunk.ref);
+  const source = toText(chunk.source_name || chunk.source);
+  const chunkId = toText(chunk.chunk_id || chunk.id);
   const preview = chunkPreview(chunk);
   const score = formatScore(chunk.score ?? chunk.retrieval_score ?? chunk.distance);
 
@@ -157,13 +288,18 @@ function RetrievedChunkCard({ chunk, index }) {
     <article className="evidence-card">
       <div className="evidence-card__header">
         <span className="evidence-card__topic" dir={contentDirection(topic || reference)} lang={hasArabic(topic || reference) ? "ar" : "en"}>
-          {topic || reference || `Evidence ${index + 1}`}
+          {topic || reference || `دليل ${index + 1}`}
         </span>
-        {score && <span className="meta-pill">Score: {score}</span>}
+        {score && <span className="meta-pill">الدرجة: {score}</span>}
       </div>
       {reference && topic !== reference && (
         <span className="evidence-card__reference" dir={contentDirection(reference)} lang={hasArabic(reference) ? "ar" : "en"}>
           {reference}
+        </span>
+      )}
+      {source && (
+        <span className="evidence-card__reference" dir={contentDirection(source)} lang={hasArabic(source) ? "ar" : "en"}>
+          {source}
         </span>
       )}
       {preview && (
@@ -171,40 +307,165 @@ function RetrievedChunkCard({ chunk, index }) {
           {preview}
         </p>
       )}
+      {chunkId && (
+        <code className="technical-id" dir="ltr">
+          {chunkId}
+        </code>
+      )}
     </article>
   );
 }
 
-function TechnicalDetails({ citations, retrievedChunks, confidence }) {
+function AnswerTextSection({ title, text, variant = "plain" }) {
+  if (!text) {
+    return null;
+  }
+
+  return (
+    <section className={`answer-section answer-section--${variant}`}>
+      <h3>{title}</h3>
+      <p className="answer-copy legal-content" dir={contentDirection(text)} lang={hasArabic(text) ? "ar" : "en"}>
+        {text}
+      </p>
+    </section>
+  );
+}
+
+function AnswerDisclaimer({ text }) {
+  if (!text) {
+    return null;
+  }
+
+  return (
+    <aside className="answer-disclaimer" aria-label="تنبيه قانوني">
+      <strong>تنبيه</strong>
+      <p dir={contentDirection(text)} lang={hasArabic(text) ? "ar" : "en"}>
+        {text}
+      </p>
+    </aside>
+  );
+}
+
+function RagResultHeader({ confidence, isAbstention }) {
+  return (
+    <div className="result-card__header legal-result__header" dir="rtl">
+      <div>
+        <h2>النتيجة القانونية</h2>
+        <p>عرض أولي منظم بناءً على المصادر القانونية المتاحة.</p>
+      </div>
+      <div className="result-status-row">
+        <StatusBadge tone={isAbstention ? "warning" : "success"}>
+          {isAbstention ? "المعلومات غير كافية" : "إجابة مستندة إلى المصادر"}
+        </StatusBadge>
+        {confidence && (
+          <span className="confidence-chip" title="مؤشر تقني للاستناد إلى المصادر، وليس ضماناً لصحة قانونية نهائية.">
+            <span>{confidence.label}</span>
+            <strong>{confidence.value}</strong>
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InsufficientRagResult({ answerText }) {
+  const message = toText(answerText) || INSUFFICIENT_FALLBACK;
+
+  return (
+    <section className="insufficient-panel" dir="rtl" lang="ar">
+      <h3>المعلومات القانونية المتاحة غير كافية</h3>
+      <p>{message}</p>
+      <p>{INSUFFICIENT_GUIDANCE}</p>
+    </section>
+  );
+}
+
+function insufficientResultText(answerText) {
+  return `${toText(answerText) || INSUFFICIENT_FALLBACK}\n\n${INSUFFICIENT_GUIDANCE}`;
+}
+
+function buildRagHumanAnswerText({ isAbstention, answerText, answerSections, showTextualReferences }) {
+  if (isAbstention) {
+    return insufficientResultText(answerText);
+  }
+
+  return [
+    answerSections.shortAnswer,
+    answerSections.explanation,
+    showTextualReferences ? answerSections.references : "",
+  ]
+    .map(toText)
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function CopyAnswerButton({ text }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copyAnswer() {
+    const answerText = toText(text);
+    if (!answerText || !navigator?.clipboard?.writeText) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(answerText);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  }
+
+  return (
+    <button type="button" className="result-action-button" onClick={copyAnswer} disabled={!toText(text)}>
+      {copied ? "Copied" : "Copy answer"}
+    </button>
+  );
+}
+
+function toggleDetails(detailsRef) {
+  if (detailsRef.current) {
+    detailsRef.current.open = !detailsRef.current.open;
+  }
+}
+
+function RagTechnicalDetails({ citations, retrievedChunks, confidence, detailsRef, detailsId }) {
   const citationIds = citations.map((citation) => toText(citation.chunk_id || citation.id)).filter(Boolean);
   const chunkIds = retrievedChunks.map((chunk) => toText(chunk.chunk_id || chunk.id)).filter(Boolean);
-  const hasDetails = citationIds.length > 0 || chunkIds.length > 0 || confidence !== null;
+  const hasDetails = retrievedChunks.length > 0 || citationIds.length > 0 || chunkIds.length > 0 || confidence !== null;
 
   if (!hasDetails) {
     return null;
   }
 
   return (
-    <details className="details-panel">
-      <summary>Technical Details</summary>
+    <details className="details-panel" ref={detailsRef} id={detailsId}>
+      <summary>عرض الأدلة المسترجعة والتفاصيل التقنية</summary>
       <div className="details-panel__content">
+        {retrievedChunks.length > 0 && (
+          <section className="details-panel__section">
+            <h3>الأدلة المسترجعة</h3>
+            <div className="evidence-grid">
+              {retrievedChunks.map((chunk, index) => (
+                <RetrievedChunkCard key={toText(chunk.chunk_id || chunk.id) || index} chunk={chunk} index={index} />
+              ))}
+            </div>
+          </section>
+        )}
         <dl className="technical-list">
           {confidence !== null && (
             <div>
-              <dt>Raw confidence</dt>
-              <dd>{confidence}</dd>
+              <dt>قيمة الثقة الخام</dt>
+              <dd dir="ltr">{confidence}</dd>
             </div>
           )}
           {citationIds.length > 0 && (
             <div>
-              <dt>Citation chunk IDs</dt>
-              <dd>{citationIds.join(", ")}</dd>
+              <dt>معرفات المراجع</dt>
+              <dd dir="ltr">{citationIds.join(", ")}</dd>
             </div>
           )}
           {chunkIds.length > 0 && (
             <div>
-              <dt>Retrieved chunk IDs</dt>
-              <dd>{chunkIds.join(", ")}</dd>
+              <dt>معرفات الأدلة</dt>
+              <dd dir="ltr">{chunkIds.join(", ")}</dd>
             </div>
           )}
         </dl>
@@ -218,10 +479,22 @@ export default function RagPage() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const technicalDetailsRef = useRef(null);
 
   const rag = normalizeRagResult(result);
   const confidence = confidenceInfo(rag.confidence);
-  const hasAnswer = Boolean(rag.answerText);
+  const answerSections = splitAnswerSections(rag.answerText);
+  const isAbstention = isInsufficientAnswer(rag);
+  const visibleDisclaimer = rag.disclaimer || answerSections.disclaimer;
+  const showStructuredCitations = !isAbstention && rag.citations.length > 0;
+  const showTextualReferences = !showStructuredCitations && Boolean(answerSections.references);
+  const hasStructuredAnswer = Boolean(answerSections.shortAnswer || answerSections.explanation || showTextualReferences);
+  const humanAnswerText = buildRagHumanAnswerText({
+    isAbstention,
+    answerText: rag.answerText,
+    answerSections,
+    showTextualReferences,
+  });
   const canRetry = question.trim().length >= 2 && !loading;
 
   async function submitQuestion() {
@@ -299,73 +572,80 @@ export default function RagPage() {
           onSuggestionSelect={setQuestion}
         />
 
-        {error && <ErrorState message={error} onRetry={canRetry ? submitQuestion : undefined} />}
-        {loading && <LoadingState message="Searching legal sources and preparing the answer..." />}
+        {error && (
+          <ErrorState title="تعذر عرض النتيجة" message={error} onRetry={canRetry ? submitQuestion : undefined} retryLabel="إعادة المحاولة" />
+        )}
+        {loading && <LoadingState message="جار البحث في المصادر القانونية وتجهيز النتيجة..." />}
 
         {result && (
           <section className="results-stack" aria-live="polite">
-            {hasAnswer ? (
-              <article className="result-card result-card--soft">
-                <div className="result-card__header">
-                  <h2>Answer</h2>
-                </div>
-                <p className="answer-copy legal-content" dir={contentDirection(rag.answerText)} lang={hasArabic(rag.answerText) ? "ar" : "en"}>
-                  {rag.answerText}
-                </p>
-              </article>
-            ) : (
-              <EmptyState
-                title="Insufficient evidence"
-                message="The current sources do not contain enough evidence to answer this question."
-              />
-            )}
+            <article className="result-card result-card--soft legal-result-card">
+              <RagResultHeader confidence={confidence} isAbstention={isAbstention} />
 
-            {confidence && (
-              <article className="result-card">
-                <div className="result-card__header">
-                  <h2>Confidence</h2>
-                </div>
-                <div className="confidence-row">
-                  <StatusBadge tone={confidence.tone}>{confidence.label}</StatusBadge>
-                  <strong>{confidence.value}</strong>
-                </div>
-              </article>
-            )}
+              {isAbstention ? (
+                <InsufficientRagResult answerText={rag.answerText} />
+              ) : (
+                <>
+                  {hasStructuredAnswer ? (
+                    <>
+                      <AnswerTextSection title={ANSWER_SECTION_TITLES.shortAnswer} text={answerSections.shortAnswer} variant="lead" />
+                      <AnswerTextSection title={ANSWER_SECTION_TITLES.explanation} text={answerSections.explanation} />
+                      {showTextualReferences && (
+                        <AnswerTextSection title={ANSWER_SECTION_TITLES.references} text={answerSections.references} variant="references" />
+                      )}
+                    </>
+                  ) : (
+                    <section className="insufficient-panel" dir="rtl" lang="ar">
+                      <h3>لا توجد إجابة قابلة للعرض</h3>
+                      <p>لم تتضمن الاستجابة نص إجابة واضحاً. يمكن مراجعة التفاصيل التقنية عند توفرها.</p>
+                    </section>
+                  )}
 
-            {rag.citations.length > 0 && (
-              <section className="result-card">
-                <div className="result-card__header">
-                  <h2>Legal References</h2>
-                  <StatusBadge>{rag.citations.length}</StatusBadge>
-                </div>
-                <div className="citation-grid">
-                  {rag.citations.map((citation, index) => (
-                    <CitationCard key={toText(citation.chunk_id || citation.id) || index} citation={citation} index={index} />
-                  ))}
-                </div>
-              </section>
-            )}
+                  {showStructuredCitations && (
+                    <section className="answer-section citations-section" dir="rtl">
+                      <div className="section-title-row">
+                        <h3>المراجع القانونية</h3>
+                        <StatusBadge>{rag.citations.length}</StatusBadge>
+                      </div>
+                      <div className="citation-grid">
+                        {rag.citations.map((citation, index) => (
+                          <CitationCard key={toText(citation.chunk_id || citation.id) || index} citation={citation} index={index} />
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                </>
+              )}
 
-            {rag.retrievedChunks.length > 0 && (
-              <details className="details-panel">
-                <summary>Retrieved Evidence</summary>
-                <div className="details-panel__content">
-                  <div className="evidence-grid">
-                    {rag.retrievedChunks.map((chunk, index) => (
-                      <RetrievedChunkCard key={toText(chunk.chunk_id || chunk.id) || index} chunk={chunk} index={index} />
-                    ))}
-                  </div>
+              {humanAnswerText && (
+                <div className="result-action-row">
+                  <CopyAnswerButton text={humanAnswerText} />
+                  <TranslationToggle text={humanAnswerText} apiUrl={API_URL} />
+                  <button
+                    type="button"
+                    className="result-action-button"
+                    onClick={() => toggleDetails(technicalDetailsRef)}
+                    aria-controls="rag-technical-details"
+                  >
+                    Technical details
+                  </button>
                 </div>
-              </details>
-            )}
+              )}
 
-            <TechnicalDetails citations={rag.citations} retrievedChunks={rag.retrievedChunks} confidence={rag.confidence} />
+              <AnswerDisclaimer text={visibleDisclaimer} />
+            </article>
 
-            {rag.disclaimer && <LegalNotice disclaimer={rag.disclaimer} />}
+            <RagTechnicalDetails
+              citations={rag.citations}
+              retrievedChunks={rag.retrievedChunks}
+              confidence={rag.confidence}
+              detailsRef={technicalDetailsRef}
+              detailsId="rag-technical-details"
+            />
           </section>
         )}
 
-        {(!result || !rag.disclaimer) && <LegalNotice />}
+        {(!result || !visibleDisclaimer) && <LegalNotice />}
       </div>
     </AppShell>
   );
